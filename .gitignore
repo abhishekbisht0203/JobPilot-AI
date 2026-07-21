@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+mobile/node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Build
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+backend/.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Docker
+infrastructure/nginx/ssl/

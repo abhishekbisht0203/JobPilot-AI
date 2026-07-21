@@ -1,0 +1,121 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: jobpilot-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobpilot
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ../backend:/app
+      - uploads:/app/uploads
+    networks:
+      - jobpilot-network
+
+  celery_worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: jobpilot-celery
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobpilot
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - jobpilot-network
+
+  celery_beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: jobpilot-celery-beat
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/jobpilot
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - jobpilot-network
+
+  db:
+    image: postgres:16-alpine
+    container_name: jobpilot-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=jobpilot
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jobpilot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: jobpilot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - jobpilot-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: jobpilot-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+    networks:
+      - jobpilot-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads:
+
+networks:
+  jobpilot-network:
+    driver: bridge

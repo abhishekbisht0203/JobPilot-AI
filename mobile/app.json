@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "JobPilot AI",
+    "slug": "jobpilot-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "jobpilot",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jobpilot.ai",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow JobPilot to access your photo library to upload resume photos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.jobpilot.ai",
+      "permissions": ["READ_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-document-picker",
+      "expo-notifications"
+    ]
+  }
+}
