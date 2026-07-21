@@ -24,6 +24,27 @@ export const colors = {
   cardOverlay: 'rgba(0,0,0,0.5)',
 };
 
+export const premium = {
+  bg: '#0B1220',
+  bgSecondary: '#0F172A',
+  bgTertiary: '#111827',
+  card: '#161F2F',
+  cardAlt: '#1B263B',
+  cardBorder: 'rgba(255,255,255,0.08)',
+  inputBg: 'rgba(255,255,255,0.04)',
+  primary: '#2563EB',
+  primaryLight: '#3B82F6',
+  primaryHover: '#4F8CFF',
+  text: '#FFFFFF',
+  textSecondary: '#94A3B8',
+  textPlaceholder: '#64748B',
+  success: '#22C55E',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  chipBg: 'rgba(255,255,255,0.05)',
+  chipBorder: 'rgba(255,255,255,0.08)',
+};
+
 export const spacing = {
   xs: 4,
   sm: 8,
