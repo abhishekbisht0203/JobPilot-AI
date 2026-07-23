@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from ..core.database import get_db
 from ..core.security import get_password_hash, verify_password, create_access_token, create_refresh_token, decode_token
 from ..core.deps import get_current_user
@@ -79,7 +79,7 @@ async def google_auth(req: GoogleAuthRequest, db: Session = Depends(get_db)):
 async def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if user:
-        reset_token = create_access_token({"sub": str(user.id), "type": "reset"}, expires_delta=3600)
+        reset_token = create_access_token({"sub": str(user.id), "type": "reset"}, expires_delta=timedelta(hours=1))
         print(f"Reset token for {user.email}: {reset_token}")
     return {"message": "If the email exists, a reset link has been sent"}
 

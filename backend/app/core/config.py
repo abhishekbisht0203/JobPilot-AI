@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+from pathlib import Path
 
 class Settings(BaseSettings):
     APP_NAME: str = "JobPilot AI"
@@ -35,6 +36,6 @@ class Settings(BaseSettings):
     PRO_DAILY_LIMIT: int = 100
 
     class Config:
-        env_file = ".env"
+        env_file = Path(__file__).resolve().parent.parent.parent / ".env"
 
 settings = Settings()

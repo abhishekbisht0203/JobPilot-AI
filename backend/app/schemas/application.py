@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import uuid
 
 class CreateApplicationRequest(BaseModel):
-    job_id: str
+    job_id: uuid.UUID
     notes: Optional[str] = None
 
 class UpdateApplicationRequest(BaseModel):
@@ -11,8 +12,8 @@ class UpdateApplicationRequest(BaseModel):
     notes: Optional[str] = None
 
 class ApplicationResponse(BaseModel):
-    id: str
-    job_id: str
+    id: uuid.UUID
+    job_id: uuid.UUID
     status: str
     notes: Optional[str]
     applied_at: Optional[datetime]

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import uuid
 
 class GenerateEmailRequest(BaseModel):
     company: str
@@ -9,7 +10,7 @@ class GenerateEmailRequest(BaseModel):
     resume_id: Optional[str] = None
 
 class ColdEmailResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     recruiter_name: Optional[str]
     recruiter_email: Optional[str]
     company: str

@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../store';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
@@ -24,9 +24,20 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
+  async (error: AxiosError<{ detail?: string; error?: string; message?: string }>) => {
+    if (error.response) {
+      const data = error.response.data;
+      const backendMsg = data?.detail || data?.error || data?.message || '';
+      if (backendMsg) {
+        error.message = backendMsg;
+      }
+      if (error.response.status === 401) {
+        useAuthStore.getState().logout();
+      }
+    } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+      error.message = 'Cannot connect to server. Check if backend is running.';
+    } else if (error.code === 'ECONNABORTED') {
+      error.message = 'Request timed out. Backend may be overloaded.';
     }
     return Promise.reject(error);
   }

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   TextInput,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Animated,
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,15 +42,39 @@ export function Input({
 }: InputProps) {
   const [focused, setFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const borderAnim = useRef(new Animated.Value(0)).current;
+
+  const handleFocus = () => {
+    setFocused(true);
+    Animated.timing(borderAnim, { toValue: 1, duration: 200, useNativeDriver: false }).start();
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+    Animated.timing(borderAnim, { toValue: 0, duration: 200, useNativeDriver: false }).start();
+  };
+
+  const borderColor = borderAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [error ? colors.error : colors.border, colors.primary],
+  });
+
+  const borderWidth = borderAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1.5, 2],
+  });
 
   return (
     <View style={[styles.container, style as ViewStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <View
+      {label && (
+        <Text style={[styles.label, focused && styles.labelFocused, error && styles.labelError]}>
+          {label}
+        </Text>
+      )}
+      <Animated.View
         style={[
           styles.inputContainer,
-          focused && styles.inputFocused,
-          error && styles.inputError,
+          { borderColor, borderWidth },
           multiline && styles.multiline,
         ]}
       >
@@ -57,7 +82,7 @@ export function Input({
           <Ionicons
             name={icon}
             size={20}
-            color={colors.textSecondary}
+            color={focused ? colors.primary : colors.textMuted}
             style={styles.icon}
           />
         )}
@@ -68,8 +93,8 @@ export function Input({
           placeholder={placeholder}
           placeholderTextColor={colors.textMuted}
           secureTextEntry={secureTextEntry && !showPassword}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           multiline={multiline}
           numberOfLines={numberOfLines}
           autoCapitalize={autoCapitalize}
@@ -79,6 +104,7 @@ export function Input({
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
             style={styles.eyeIcon}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons
               name={showPassword ? 'eye-off-outline' : 'eye-outline'}
@@ -87,8 +113,13 @@ export function Input({
             />
           </TouchableOpacity>
         )}
-      </View>
-      {error && <Text style={styles.error}>{error}</Text>}
+      </Animated.View>
+      {error && (
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle" size={14} color={colors.error} />
+          <Text style={styles.error}>{error}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -100,7 +131,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: spacing.xs,
+    marginLeft: 2,
   },
+  labelFocused: { color: colors.primary },
+  labelError: { color: colors.error },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -109,28 +143,31 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
-    height: 48,
+    height: 52,
   },
-  inputFocused: { borderColor: colors.primary },
-  inputError: { borderColor: colors.error },
-  multiline: { height: 'auto', minHeight: 100, alignItems: 'flex-start' },
+  multiline: { height: 'auto', minHeight: 110, alignItems: 'flex-start' },
   input: {
     flex: 1,
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
     height: '100%',
   },
   multilineInput: {
     height: 'auto',
-    minHeight: 90,
-    paddingTop: spacing.sm,
+    minHeight: 100,
+    paddingTop: spacing.sm + 4,
     textAlignVertical: 'top',
   },
   icon: { marginRight: spacing.sm },
   eyeIcon: { padding: spacing.xs },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+  },
   error: {
     color: colors.error,
     fontSize: 12,
-    marginTop: spacing.xs,
   },
 });

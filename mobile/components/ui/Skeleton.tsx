@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
-import { colors, borderRadius } from '../../lib/theme';
+import { View, Animated, StyleSheet, ViewStyle, Easing } from 'react-native';
+import { colors, borderRadius, shadow } from '../../lib/theme';
 
 interface SkeletonProps {
   width?: number | string;
@@ -9,40 +9,25 @@ interface SkeletonProps {
   borderRadiusValue?: number;
 }
 
-export function Skeleton({
-  width = '100%',
-  height = 20,
-  style,
-  borderRadiusValue = borderRadius.sm,
-}: SkeletonProps) {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+export function Skeleton({ width = '100%', height = 20, style, borderRadiusValue = borderRadius.sm }: SkeletonProps) {
+  const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.7,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.3,
-          duration: 800,
-          useNativeDriver: true,
-        }),
+        Animated.timing(shimmer, { toValue: 1, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(shimmer, { toValue: 0, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
       ])
     );
     animation.start();
     return () => animation.stop();
   }, []);
 
+  const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.65] });
+
   return (
     <Animated.View
-      style={[
-        styles.skeleton,
-        { width: width as any, height, borderRadius: borderRadiusValue, opacity },
-        style,
-      ]}
+      style={[styles.skeleton, { width: width as any, height, borderRadius: borderRadiusValue, opacity }, style]}
     />
   );
 }
@@ -50,25 +35,36 @@ export function Skeleton({
 export function JobCardSkeleton() {
   return (
     <View style={styles.card}>
-      <Skeleton height={20} width="60%" />
-      <Skeleton height={14} width="40%" style={{ marginTop: 8 }} />
-      <Skeleton height={14} width="80%" style={{ marginTop: 12 }} />
-      <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
-        <Skeleton height={24} width={60} borderRadiusValue={12} />
-        <Skeleton height={24} width={80} borderRadiusValue={12} />
+      <View style={styles.cardHeader}>
+        <Skeleton height={48} width={48} borderRadiusValue={12} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Skeleton height={18} width="70%" />
+          <Skeleton height={14} width="45%" style={{ marginTop: 6 }} />
+        </View>
+      </View>
+      <View style={styles.metaRow}>
+        <Skeleton height={12} width="30%" borderRadiusValue={6} />
+        <Skeleton height={12} width="25%" borderRadiusValue={6} />
+        <Skeleton height={12} width="20%" borderRadiusValue={6} />
+      </View>
+      <Skeleton height={14} width="100%" style={{ marginTop: 8 }} />
+      <Skeleton height={14} width="85%" style={{ marginTop: 6 }} />
+      <View style={styles.tagRow}>
+        <Skeleton height={26} width={70} borderRadiusValue={13} />
+        <Skeleton height={26} width={90} borderRadiusValue={13} />
+        <Skeleton height={26} width={60} borderRadiusValue={13} />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  skeleton: { backgroundColor: colors.surfaceLight },
+  skeleton: { backgroundColor: colors.border },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.surface, borderRadius: borderRadius.xl, padding: 16,
+    marginBottom: 12, ...shadow.sm,
   },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  metaRow: { flexDirection: 'row', gap: 12, marginTop: 10 },
+  tagRow: { flexDirection: 'row', marginTop: 12, gap: 8 },
 });

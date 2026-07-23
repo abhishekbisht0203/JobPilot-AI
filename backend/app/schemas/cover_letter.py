@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import uuid
 
 class GenerateCoverLetterRequest(BaseModel):
     job_description: str
@@ -10,7 +11,7 @@ class GenerateCoverLetterRequest(BaseModel):
     resume_id: Optional[str] = None
 
 class CoverLetterResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     company: str
     job_title: str
     tone: str

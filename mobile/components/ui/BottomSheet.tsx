@@ -25,7 +25,7 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
     if (visible) {
       Animated.spring(translateY, {
         toValue: 0,
-        damping: 20,
+        damping: 25,
         stiffness: 200,
         useNativeDriver: true,
       }).start();
@@ -53,7 +53,7 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
         } else {
           Animated.spring(translateY, {
             toValue: 0,
-            damping: 20,
+            damping: 25,
             useNativeDriver: true,
           }).start();
         }
@@ -80,7 +80,7 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.backdrop,
   },
   sheet: {
     position: 'absolute',
@@ -88,17 +88,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: colors.surface,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
     maxHeight: SCREEN_HEIGHT * 0.8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   handle: {
     width: 40,
-    height: 4,
+    height: 5,
     backgroundColor: colors.border,
-    borderRadius: 2,
+    borderRadius: 2.5,
     alignSelf: 'center',
     marginTop: spacing.sm,
     marginBottom: spacing.md,

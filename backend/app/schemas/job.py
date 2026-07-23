@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+import uuid
 
 class JobResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     title: str
     company: str
     platform: str

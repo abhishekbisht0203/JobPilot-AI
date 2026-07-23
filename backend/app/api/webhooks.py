@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from ..core.database import get_db

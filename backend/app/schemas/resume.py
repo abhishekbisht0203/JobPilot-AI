@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import uuid
 
 class ResumeResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     original_filename: str
     file_url: Optional[str]
     parsed_text: Optional[str]
@@ -14,8 +15,8 @@ class ResumeResponse(BaseModel):
         from_attributes = True
 
 class ResumeVersionResponse(BaseModel):
-    id: str
-    resume_id: str
+    id: uuid.UUID
+    resume_id: uuid.UUID
     title: str
     content: str
     target_role: str
