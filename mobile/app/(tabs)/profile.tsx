@@ -62,7 +62,7 @@ function MenuRow({ item, theme, onThemeChange }: {
   const scale = useSharedValue(1);
 
   return (
-    <Animated.View style={{ transform: [{ scale: scale.value }] }}>
+    <Animated.View style={{ transform: [{ scale }] }}>
       <TouchableOpacity
         onPress={() => item.isTheme ? null : router.push(item.route as any)}
         onPressIn={() => { scale.value = withSpring(0.96, { stiffness: 400, damping: 12 }); }}

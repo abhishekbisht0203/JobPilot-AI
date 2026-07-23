@@ -43,7 +43,7 @@ function StatusPill({ tab, active, onPress }: { tab: StatusTab; active: boolean;
       onPressOut={() => { scale.value = withSpring(1, { stiffness: 300, damping: 15 }); }}
       activeOpacity={1}
     >
-      <Animated.View style={[{ transform: [{ scale: scale.value }] }]}>
+      <Animated.View style={[{ transform: [{ scale }] }]}>
         <View style={[styles.tab, active && styles.tabActive]}>
           {tab !== 'all' && (
             <Ionicons name={STATUS_CONFIG[tab].icon} size={12} color={active ? colors.white : STATUS_CONFIG[tab].color} style={{ marginRight: 4 }} />

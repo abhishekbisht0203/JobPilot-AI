@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
-  useSharedValue, useAnimatedProps, withSpring, withTiming, withRepeat,
+  useSharedValue, useAnimatedProps, useAnimatedStyle, withSpring, withTiming, withRepeat,
   withSequence, Easing, interpolate, FadeInDown, FadeInUp, FadeIn,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,6 +53,14 @@ function AnimatedActionCard({ item, index }: { item: typeof QUICK_ACTIONS[number
   const scale = useSharedValue(1);
   const glow = useSharedValue(0);
 
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: 0.15 + glow.value * 0.3,
+  }));
+
   return (
     <Animated.View entering={FadeInDown.delay(200 + index * 80).springify().damping(15)}>
       <TouchableOpacity
@@ -61,9 +69,9 @@ function AnimatedActionCard({ item, index }: { item: typeof QUICK_ACTIONS[number
         onPressOut={() => { scale.value = withSpring(1, { stiffness: 300, damping: 15 }); glow.value = withTiming(0, { duration: 200 }); }}
         activeOpacity={1}
       >
-        <Animated.View style={{ transform: [{ scale: scale.value }] }}>
+        <Animated.View style={cardStyle}>
           <BlurView intensity={60} tint="light" style={styles.actionCard}>
-            <Animated.View style={[styles.actionGlow, { backgroundColor: item.gradient[0] }, { opacity: 0.15 + glow.value * 0.3 }]} />
+            <Animated.View style={[styles.actionGlow, { backgroundColor: item.gradient[0] }, glowStyle]} />
             <LinearGradient colors={item.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionIcon}>
               <Ionicons name={item.icon as any} size={20} color="#FFFFFF" />
             </LinearGradient>
@@ -110,7 +118,7 @@ function AITipCard() {
     <Animated.View entering={FadeInUp.delay(250).springify().damping(14)}>
       <GlassCard style={styles.tipCard} glowColor={colors.secondary}>
         <View style={styles.tipRow}>
-          <Animated.View style={{ transform: [{ scale: pulse.value }] }}>
+          <Animated.View style={{ transform: [{ scale: pulse }] }}>
             <LinearGradient colors={['#8B5CF6', '#6366F1']} style={styles.tipIconGradient}>
               <Ionicons name="sparkles" size={18} color="#FFFFFF" />
             </LinearGradient>
@@ -208,6 +216,10 @@ function ProgressSection({ progress, goal }: { progress: number; goal: number })
     fillWidth.value = withTiming(pct, { duration: 1500, easing: Easing.bezier(0.16, 1, 0.3, 1) });
   }, [pct]);
 
+  const animatedFillStyle = useAnimatedStyle(() => ({
+    width: (interpolate(fillWidth.value, [0, 1], [0, 100]) + '%') as any,
+  }));
+
   return (
     <Animated.View entering={FadeInUp.delay(450).springify().damping(14)}>
       <GlassCard style={styles.progressCard} glowColor={colors.primary}>
@@ -216,9 +228,7 @@ function ProgressSection({ progress, goal }: { progress: number; goal: number })
           <Text style={styles.progressCount}>{progress}/{goal} applications</Text>
         </View>
         <View style={styles.progressBarBg}>
-          <Animated.View style={[styles.progressBarFill, {
-            width: interpolate(fillWidth.value, [0, 1], [0, 100]) + '%' as any,
-          } as any]} />
+          <Animated.View style={[styles.progressBarFill, animatedFillStyle]} />
         </View>
       </GlassCard>
     </Animated.View>
