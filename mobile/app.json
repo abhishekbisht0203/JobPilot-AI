@@ -3,6 +3,9 @@
     "name": "JobPilot AI",
     "slug": "jobpilot-ai",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "jobpilot",
@@ -21,11 +24,11 @@
       }
     },
     "android": {
+      "package": "com.jobpilot.ai",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F5F7FB"
       },
-      "package": "com.jobpilot.ai",
       "permissions": [
         "READ_EXTERNAL_STORAGE"
       ]
