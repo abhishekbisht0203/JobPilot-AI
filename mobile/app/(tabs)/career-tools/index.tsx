@@ -16,10 +16,9 @@ import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import { CareerTool } from '../../../types';
 
 const TOOLS: CareerTool[] = [
-  { id: 'resume-builder', name: 'AI Resume Builder', description: 'Craft ATS-optimized resumes with AI guidance', icon: 'document-text', color: '#3B82F6', route: '/generate/resume-version', status: 'available' },
-  { id: 'cover-letter', name: 'Cover Letter Generator', description: 'Generate tailored cover letters instantly', icon: 'mail', color: '#8B5CF6', route: '/generate/cover-letter', status: 'available' },
-  { id: 'mock-interview', name: 'Mock Interview', description: 'Practice with AI-powered interview simulations', icon: 'mic', color: '#14B8A6', route: '/ai/mock-interview', status: 'available' },
-  { id: 'skill-analyzer', name: 'Skill Analyzer', description: 'Identify skill gaps for your target role', icon: 'analytics', color: '#F97316', route: '/ai/skill-gap', status: 'available' },
+  { id: 'resume-builder', name: 'AI Resume Builder', description: 'Craft ATS-optimized resumes with AI guidance', icon: 'document-text', color: '#3B82F6', route: '/career-tools/resume-builder', status: 'available' },
+  { id: 'cover-letter', name: 'Cover Letter Generator', description: 'Generate tailored cover letters instantly', icon: 'mail', color: '#8B5CF6', route: '/career-tools/cover-letter', status: 'available' },
+  { id: 'mock-interview', name: 'Mock Interview', description: 'Practice with AI-powered interview simulations', icon: 'mic', color: '#14B8A6', route: '/career-tools/mock-interview', status: 'available' },
   { id: 'resume-checker', name: 'Resume Checker', description: 'Check ATS compatibility and get suggestions', icon: 'checkmark-circle', color: '#10B981', route: '/career-tools/resume-checker', status: 'available' },
   { id: 'salary-explorer', name: 'Salary Explorer', description: 'Explore salary trends by role and location', icon: 'cash', color: '#F59E0B', route: '/career-tools/salary-explorer', status: 'available' },
   { id: 'career-roadmap', name: 'Career Roadmap', description: 'Plan your career growth with AI insights', icon: 'trending-up', color: '#6366F1', route: '/career-tools/career-roadmap', status: 'available' },
@@ -31,7 +30,6 @@ const TOOL_COLORS: Record<string, readonly [string, string]> = {
   '3B82F6': colors.gradient.blue,
   '8B5CF6': colors.gradient.purple,
   '14B8A6': colors.gradient.teal,
-  'F97316': colors.gradient.sunset,
   '10B981': colors.gradient.success,
   'F59E0B': colors.gradient.warning,
   '6366F1': colors.gradient.indigo,

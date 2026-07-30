@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,27 +12,69 @@ import { GlassCard } from '../../../components/ui/GlassCard';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
+import { ToolHeader, SectionHeader, GradientButton, TabBar, InfoCard, ProgressBar } from '../../../components/career-tools';
+import { SearchBar, TopicCard, AnimatedCard, BadgePill } from '../../../components/career-tools/shared';
+import { resourceApi } from '../../../lib/api';
 
-const QUESTIONS = [
+interface QuestionItem {
+  text: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+}
+
+interface QuestionCategory {
+  category: string;
+  icon: string;
+  questions: QuestionItem[];
+}
+
+const QUESTIONS: QuestionCategory[] = [
   {
     category: 'General',
     icon: 'person',
-    questions: ['Tell me about yourself.', 'Why do you want to work here?', 'Where do you see yourself in 5 years?', 'What are your greatest strengths and weaknesses?'],
+    questions: [
+      { text: 'Tell me about yourself.', difficulty: 'Easy' },
+      { text: 'Why do you want to work here?', difficulty: 'Easy' },
+      { text: 'Where do you see yourself in 5 years?', difficulty: 'Medium' },
+      { text: 'What are your greatest strengths and weaknesses?', difficulty: 'Medium' },
+      { text: 'Describe your ideal work environment.', difficulty: 'Easy' },
+      { text: 'What motivates you professionally?', difficulty: 'Medium' },
+    ],
   },
   {
     category: 'Technical',
     icon: 'code-slash',
-    questions: ['Explain a challenging project you worked on.', 'How do you stay updated with industry trends?', 'Describe your development workflow.', 'How do you handle technical debt?'],
+    questions: [
+      { text: 'Explain a challenging project you worked on.', difficulty: 'Medium' },
+      { text: 'How do you stay updated with industry trends?', difficulty: 'Easy' },
+      { text: 'Describe your development workflow.', difficulty: 'Medium' },
+      { text: 'How do you handle technical debt?', difficulty: 'Hard' },
+      { text: 'Explain a time you optimized performance.', difficulty: 'Hard' },
+      { text: 'How do you approach debugging?', difficulty: 'Medium' },
+    ],
   },
   {
     category: 'Behavioral',
     icon: 'people',
-    questions: ['Describe a time you had a conflict at work.', 'Tell me about a failure and what you learned.', 'How do you handle tight deadlines?', 'Give an example of leadership.'],
+    questions: [
+      { text: 'Describe a time you had a conflict at work.', difficulty: 'Medium' },
+      { text: 'Tell me about a failure and what you learned.', difficulty: 'Medium' },
+      { text: 'How do you handle tight deadlines?', difficulty: 'Easy' },
+      { text: 'Give an example of leadership.', difficulty: 'Hard' },
+      { text: 'Describe a time you went above and beyond.', difficulty: 'Medium' },
+      { text: 'How do you handle constructive criticism?', difficulty: 'Easy' },
+    ],
   },
   {
     category: 'Career',
     icon: 'trending-up',
-    questions: ['Why are you leaving your current role?', 'What type of work environment do you prefer?', 'What are your salary expectations?', 'Do you have any questions for us?'],
+    questions: [
+      { text: 'Why are you leaving your current role?', difficulty: 'Medium' },
+      { text: 'What type of work environment do you prefer?', difficulty: 'Easy' },
+      { text: 'What are your salary expectations?', difficulty: 'Hard' },
+      { text: 'Do you have any questions for us?', difficulty: 'Easy' },
+      { text: 'What do you know about our company?', difficulty: 'Easy' },
+      { text: 'How does this role fit your career goals?', difficulty: 'Medium' },
+    ],
   },
 ];
 
@@ -43,13 +85,54 @@ const TIPS = [
   { icon: 'time-outline', title: 'Prepare Questions', body: 'Always have 3-5 thoughtful questions ready for the interviewer.' },
 ];
 
+const DIFFICULTY_COLORS: Record<string, string> = {
+  Easy: colors.success,
+  Medium: colors.warning,
+  Hard: colors.error,
+};
+
+const TABS = [
+  { key: 'tips', label: 'Tips', icon: 'bulb-outline' },
+  { key: 'questions', label: 'Questions', icon: 'help-circle-outline' },
+  { key: 'custom', label: 'Custom', icon: 'add-circle-outline' },
+];
+
 export default function InterviewPrepScreen() {
   const insets = useSafeAreaInsets();
   const { horizontalPadding } = useResponsive();
+  const [activeTab, setActiveTab] = useState('tips');
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
-  const [showTips, setShowTips] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [customQ, setCustomQ] = useState('');
   const [customQs, setCustomQs] = useState<string[]>([]);
+  const [reviewedCount, setReviewedCount] = useState<Record<string, number>>({});
+  const [apiQuestions, setApiQuestions] = useState<QuestionCategory[] | null>(null);
+  const [loadingApi, setLoadingApi] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await resourceApi.list({ type: 'question', per_page: 50 });
+        const items = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        if (items.length > 0) {
+          const cats: QuestionCategory[] = [];
+          const map = new Map<string, any[]>();
+          for (const q of items) {
+            const cat = q.category || 'General';
+            if (!map.has(cat)) map.set(cat, []);
+            map.get(cat)!.push({ text: q.title || q.question || q.content, difficulty: q.difficulty || 'Medium' });
+          }
+          const icons: Record<string, string> = { General: 'person', Technical: 'code-slash', Behavioral: 'people', Career: 'trending-up', Leadership: 'shield', 'Problem Solving': 'bulb' };
+          for (const [category, questions] of map) {
+            if (questions.length > 0) cats.push({ category, icon: icons[category] || 'help-circle', questions: questions.slice(0, 10) });
+          }
+          if (cats.length > 0) setApiQuestions(cats);
+        }
+      } catch {} finally { setLoadingApi(false); }
+    })();
+  }, []);
+
+  const displayedCategories = apiQuestions || QUESTIONS;
 
   const addCustomQuestion = useCallback(() => {
     if (!customQ.trim()) return;
@@ -57,131 +140,134 @@ export default function InterviewPrepScreen() {
     setCustomQ('');
   }, [customQ]);
 
+  const removeCustomQuestion = useCallback((index: number) => {
+    setCustomQs(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const markReviewed = useCallback((category: string) => {
+    setReviewedCount(prev => ({
+      ...prev,
+      [category]: Math.min((prev[category] || 0) + 1, displayedCategories.find(c => c.category === category)?.questions.length || 0),
+    }));
+  }, []);
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return displayedCategories;
+    const q = searchQuery.toLowerCase();
+    return displayedCategories.map(cat => ({
+      ...cat,
+      questions: cat.questions.filter(qi => qi.text.toLowerCase().includes(q)),
+    })).filter(cat => cat.questions.length > 0);
+  }, [searchQuery]);
+
+  const tipsTab = (
+    <View>
+      <SectionHeader title="Interview Tips" icon="bulb-outline" />
+      {TIPS.map((tip, index) => (
+        <Animated.View key={tip.title} entering={FadeInDown.delay(200 + index * 60).springify().damping(14)}>
+          <BlurView intensity={40} tint="light" style={styles.tipCard}>
+            <LinearGradient colors={['#F472B6', '#EC4899']} style={styles.tipIcon}>
+              <Ionicons name={tip.icon as any} size={18} color="#FFFFFF" />
+            </LinearGradient>
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={styles.tipTitle}>{tip.title}</Text>
+              <Text style={styles.tipBody}>{tip.body}</Text>
+            </View>
+          </BlurView>
+        </Animated.View>
+      ))}
+    </View>
+  );
+
+  const questionsTab = (
+    <View>
+      <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search questions..." />
+
+      <SectionHeader title="Practice Questions" icon="help-circle-outline" />
+      {filteredCategories.map((cat, ci) => {
+        const total = cat.questions.length;
+        const reviewed = reviewedCount[cat.category] || 0;
+        return (
+          <TopicCard
+            key={cat.category}
+            title={cat.category}
+            icon={cat.icon}
+            completion={total > 0 ? Math.round((reviewed / total) * 100) : 0}
+            questionCount={total}
+            gradientColors={['#F472B6', '#EC4899']}
+            onPress={() => setExpandedCat(expandedCat === cat.category ? null : cat.category)}
+          />
+        );
+      })}
+
+      {filteredCategories.length === 0 && (
+        <EmptyState icon="search-outline" title="No questions found" message="Try a different search term." />
+      )}
+    </View>
+  );
+
+  const customTab = (
+    <View>
+      <GlassCard style={styles.customCard} glowColor={colors.accent.pink}>
+        <Text style={styles.customTitle}>Add Your Own Question</Text>
+        <View style={styles.customRow}>
+          <TextInput
+            style={styles.customInput}
+            placeholder="Type a question..."
+            placeholderTextColor={colors.textMuted}
+            value={customQ}
+            onChangeText={setCustomQ}
+            onSubmitEditing={addCustomQuestion}
+          />
+          <TouchableOpacity onPress={addCustomQuestion} disabled={!customQ.trim()} style={[styles.customAddBtn, { opacity: customQ.trim() ? 1 : 0.5 }]}>
+            <Ionicons name="add" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </GlassCard>
+
+      {customQs.length > 0 && (
+        <>
+          <SectionHeader title="Your Questions" icon="bookmark-outline" badge={customQs.length} />
+          {customQs.map((q, i) => (
+            <Animated.View key={i} entering={FadeInDown.delay(200 + i * 40).springify().damping(14)}>
+              <BlurView intensity={40} tint="light" style={styles.customQCard}>
+                <View style={[styles.qDot, { backgroundColor: colors.accent.pink }]} />
+                <Text style={styles.qText}>{q}</Text>
+                <TouchableOpacity onPress={() => removeCustomQuestion(i)} style={styles.deleteBtn}>
+                  <Ionicons name="trash-outline" size={16} color={colors.error} />
+                </TouchableOpacity>
+              </BlurView>
+            </Animated.View>
+          ))}
+        </>
+      )}
+
+      {customQs.length === 0 && (
+        <EmptyState icon="bookmarks-outline" title="No custom questions" message="Add your own interview questions above to practice." />
+      )}
+
+      <TouchableOpacity onPress={() => (router as any).push?.('/ai/mock-interview')} style={styles.mockBtn} activeOpacity={0.8}>
+        <LinearGradient colors={['#F472B6', '#EC4899']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.mockGradient}>
+          <Ionicons name="mic" size={20} color="#FFFFFF" />
+          <Text style={styles.mockText}> Practice with AI Mock Interview</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
+      <ToolHeader title="Interview Preparation" subtitle="Practice questions, tips, and guidance" gradient={['#F472B6', '#EC4899'] as const} icon="help-circle" />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Animated.View entering={FadeInUp.delay(100).springify().damping(14)} style={[styles.header, { paddingTop: insets.top + 12 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Interview Preparation</Text>
-          <Text style={styles.subtitle}>Practice questions, tips, and guidance</Text>
-        </Animated.View>
+        <TabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <Animated.View entering={FadeInDown.delay(150).springify().damping(14)}>
-          <GlassCard style={styles.toggleCard} glowColor={(colors.gradient.coral as readonly string[])[0]}>
-            <View style={styles.toggleRow}>
-              <TouchableOpacity onPress={() => setShowTips(true)} activeOpacity={0.7}>
-                <BlurView intensity={40} tint="light" style={[styles.toggleBtn, showTips && styles.toggleBtnActive]}>
-                  <Ionicons name="bulb-outline" size={16} color={showTips ? colors.text : colors.textSecondary} />
-                  <Text style={[styles.toggleText, showTips && styles.toggleTextActive]}>Tips</Text>
-                </BlurView>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowTips(false)} activeOpacity={0.7}>
-                <BlurView intensity={40} tint="light" style={[styles.toggleBtn, !showTips && styles.toggleBtnActive]}>
-                  <Ionicons name="help-circle-outline" size={16} color={!showTips ? colors.text : colors.textSecondary} />
-                  <Text style={[styles.toggleText, !showTips && styles.toggleTextActive]}>Questions</Text>
-                </BlurView>
-              </TouchableOpacity>
-            </View>
-          </GlassCard>
-        </Animated.View>
-
-        {showTips ? (
-          <View>
-            <Text style={styles.sectionTitle}>Interview Tips</Text>
-            {TIPS.map((tip, index) => (
-              <Animated.View key={tip.title} entering={FadeInDown.delay(200 + index * 60).springify().damping(14)}>
-                <BlurView intensity={40} tint="light" style={styles.tipCard}>
-                  <LinearGradient colors={['#F472B6', '#EC4899']} style={styles.tipIcon}>
-                    <Ionicons name={tip.icon as any} size={18} color="#FFFFFF" />
-                  </LinearGradient>
-                  <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                    <Text style={styles.tipTitle}>{tip.title}</Text>
-                    <Text style={styles.tipBody}>{tip.body}</Text>
-                  </View>
-                </BlurView>
-              </Animated.View>
-            ))}
-          </View>
-        ) : (
-          <View>
-            <GlassCard style={styles.customCard} glowColor={(colors.gradient.coral as readonly string[])[0]}>
-              <Text style={styles.customTitle}>Add Your Own Question</Text>
-              <View style={styles.customRow}>
-                <TextInput
-                  style={styles.customInput}
-                  placeholder="Type a question..."
-                  placeholderTextColor={colors.textMuted}
-                  value={customQ}
-                  onChangeText={setCustomQ}
-                  onSubmitEditing={addCustomQuestion}
-                />
-                <TouchableOpacity onPress={addCustomQuestion} disabled={!customQ.trim()} style={styles.customAddBtn}>
-                  <Ionicons name="add" size={20} color={customQ.trim() ? '#FFFFFF' : colors.textMuted} />
-                </TouchableOpacity>
-              </View>
-            </GlassCard>
-
-            <Text style={styles.sectionTitle}>Practice Questions</Text>
-            {QUESTIONS.map((cat, ci) => (
-              <Animated.View key={cat.category} entering={FadeInDown.delay(200 + ci * 60).springify().damping(14)}>
-                <TouchableOpacity onPress={() => setExpandedCat(expandedCat === cat.category ? null : cat.category)} activeOpacity={0.8}>
-                  <BlurView intensity={40} tint="light" style={styles.categoryCard}>
-                    <View style={styles.categoryHeader}>
-                      <LinearGradient colors={['#F472B6', '#EC4899']} style={styles.categoryIcon}>
-                        <Ionicons name={cat.icon as any} size={18} color="#FFFFFF" />
-                      </LinearGradient>
-                      <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                        <Text style={styles.categoryName}>{cat.category}</Text>
-                        <Text style={styles.categoryCount}>{cat.questions.length} questions</Text>
-                      </View>
-                      <Ionicons
-                        name={expandedCat === cat.category ? 'chevron-up' : 'chevron-down'}
-                        size={18} color={colors.textMuted}
-                      />
-                    </View>
-                    {expandedCat === cat.category && (
-                      <View style={styles.qList}>
-                        {cat.questions.map((q, qi) => (
-                          <View key={qi} style={styles.qItem}>
-                            <View style={styles.qDot} />
-                            <Text style={styles.qText}>{q}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </BlurView>
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
-
-            {customQs.length > 0 && (
-              <>
-                <Text style={styles.sectionTitle}>Your Questions</Text>
-                {customQs.map((q, i) => (
-                  <Animated.View key={i} entering={FadeInDown.delay(200 + i * 40).springify().damping(14)}>
-                    <BlurView intensity={40} tint="light" style={styles.customQCard}>
-                      <View style={styles.qDot} />
-                      <Text style={styles.qText}>{q}</Text>
-                    </BlurView>
-                  </Animated.View>
-                ))}
-              </>
-            )}
-
-            <TouchableOpacity onPress={() => router.push('/ai/mock-interview')} style={styles.mockBtn} activeOpacity={0.8}>
-              <LinearGradient colors={['#F472B6', '#EC4899']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.mockGradient}>
-                <Ionicons name="mic" size={20} color="#FFFFFF" />
-                <Text style={styles.mockText}>&nbsp;Practice with AI Mock Interview</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        )}
+        {activeTab === 'tips' && tipsTab}
+        {activeTab === 'questions' && questionsTab}
+        {activeTab === 'custom' && customTab}
       </ScrollView>
     </View>
   );
@@ -190,36 +276,31 @@ export default function InterviewPrepScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: getTabListBottomPadding() },
-  header: { paddingBottom: spacing.md },
-  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm },
-  title: { fontSize: 28, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
-  toggleCard: { marginBottom: spacing.md },
-  toggleRow: { flexDirection: 'row', gap: spacing.sm },
-  toggleBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: borderRadius.full, overflow: 'hidden' },
-  toggleBtnActive: { backgroundColor: (colors.gradient.coral as readonly string[])[0] + '20' },
-  toggleText: { fontSize: 13, fontWeight: '500', color: colors.textSecondary },
-  toggleTextActive: { color: colors.text, fontWeight: '600' },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: spacing.md, marginBottom: spacing.sm },
   tipCard: { flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderRadius: borderRadius.xl, marginBottom: spacing.sm, overflow: 'hidden' },
   tipIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   tipTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
   tipBody: { fontSize: 13, color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
-  customCard: { marginBottom: spacing.md },
-  customTitle: { fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: spacing.sm },
-  customRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  customInput: { flex: 1, backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, fontSize: 14, color: colors.text },
-  customAddBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: (colors.gradient.coral as readonly string[])[0] + '30', justifyContent: 'center', alignItems: 'center' },
+  searchCard: { marginBottom: spacing.md },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  searchInput: { flex: 1, fontSize: 14, color: colors.text, paddingVertical: spacing.xs },
   categoryCard: { padding: spacing.md, borderRadius: borderRadius.xl, marginBottom: spacing.sm, overflow: 'hidden' },
   categoryHeader: { flexDirection: 'row', alignItems: 'center' },
   categoryIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   categoryName: { fontSize: 15, fontWeight: '600', color: colors.text },
   categoryCount: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  categoryRight: { flexDirection: 'row', alignItems: 'center' },
+  categoryProgress: { marginTop: spacing.sm, marginBottom: spacing.xs },
   qList: { marginTop: spacing.md, gap: spacing.sm },
-  qItem: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  qDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: (colors.gradient.coral as readonly string[])[0], marginTop: 6 },
+  qItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
+  qDot: { width: 8, height: 8, borderRadius: 4 },
   qText: { fontSize: 13, color: colors.textSecondary, flex: 1, lineHeight: 18 },
-  customQCard: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, padding: spacing.md, borderRadius: borderRadius.xl, marginBottom: spacing.sm, overflow: 'hidden' },
+  customCard: { marginBottom: spacing.md },
+  customTitle: { fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: spacing.sm },
+  customRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  customInput: { flex: 1, backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, fontSize: 14, color: colors.text },
+  customAddBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.accent.pink, justifyContent: 'center', alignItems: 'center' },
+  customQCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: borderRadius.xl, marginBottom: spacing.sm, overflow: 'hidden' },
+  deleteBtn: { padding: spacing.xs },
   mockBtn: { marginTop: spacing.lg, marginBottom: spacing.md },
   mockGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.md, borderRadius: borderRadius.lg, gap: spacing.sm, ...shadow.glow.primary },
   mockText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as DocumentPicker from 'expo-document-picker';
-import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedProps, withTiming, interpolate } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, shadow } from '../../../lib/theme';
 import { useResponsive } from '../../../lib/responsive';
@@ -16,18 +15,37 @@ import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
+import { ToolHeader, AnimatedScoreRing, SectionHeader, GradientButton, ProgressBar, EmptyToolState } from '../../../components/career-tools';
+import { UploadCard, AnimatedCard, BadgePill } from '../../../components/career-tools/shared';
 import { resumeApi } from '../../../lib/api';
 import { Resume } from '../../../types';
 import { formatDate } from '../../../lib/helpers';
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+interface AtsBreakdown {
+  label: string;
+  score: number;
+  icon: string;
+  color: string;
+}
 
-const BREAKDOWN_SEGMENTS = [
-  { label: 'Keyword Optimization', weight: 35, icon: 'key', color: colors.primary },
-  { label: 'Format & Structure', weight: 25, icon: 'grid', color: colors.secondary },
-  { label: 'Content Quality', weight: 20, icon: 'document-text', color: colors.success },
-  { label: 'Experience Relevance', weight: 20, icon: 'briefcase', color: colors.info },
-];
+interface AtsAnalysis {
+  overallScore: number;
+  atsScore: number;
+  keywordScore: number;
+  formattingScore: number;
+  readabilityScore: number;
+  grammarScore: number;
+  skillsScore: number;
+  experienceScore: number;
+  projectsScore: number;
+  educationScore: number;
+  certificationsScore: number;
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: string[];
+  sectionFeedback?: { section: string; score: number; feedback: string; suggestions: string[] }[];
+  jdMatch?: { matchPercentage: number; matchedKeywords: string[]; missingKeywords: string[] };
+}
 
 const ATS_TIPS = [
   { icon: 'document-text', tip: 'Use standard section headings like "Experience", "Education", "Skills"' },
@@ -38,41 +56,17 @@ const ATS_TIPS = [
   { icon: 'text', tip: 'Use bullet points with action verbs to describe achievements' },
 ];
 
-function BreakdownRing({ score }: { score: number }) {
-  const progress = useSharedValue(0);
-  const radius = 48;
-  const circumference = 2 * Math.PI * radius;
-
-  useEffect(() => {
-    progress.value = withTiming(score / 100, { duration: 1800 });
-  }, [score]);
-
-  const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: interpolate(progress.value, [0, 1], [circumference, 0]),
-  }));
-
-  const ringColor = score >= 80 ? colors.success : score >= 60 ? colors.warning : colors.error;
-
-  return (
-    <View style={styles.bigRing}>
-      <Svg width={110} height={110}>
-        <Circle cx={55} cy={55} r={radius} fill="none" stroke={colors.borderLight} strokeWidth={8} />
-        <AnimatedCircle
-          cx={55} cy={55} r={radius}
-          fill="none" stroke={ringColor}
-          strokeWidth={8} strokeLinecap="round"
-          strokeDasharray={circumference}
-          animatedProps={animatedProps}
-          transform={`rotate(-90 55 55)`}
-        />
-      </Svg>
-      <View style={styles.bigRingLabel}>
-        <Text style={[styles.bigRingScore, { color: ringColor }]}>{Math.round(score)}</Text>
-        <Text style={styles.bigRingSub}>ATS Score</Text>
-      </View>
-    </View>
-  );
-}
+const BREAKDOWN_KEYS: { key: keyof AtsAnalysis; label: string; icon: string; color: string }[] = [
+  { key: 'keywordScore', label: 'Keyword Optimization', icon: 'key', color: colors.primary },
+  { key: 'formattingScore', label: 'Format & Structure', icon: 'grid', color: colors.secondary },
+  { key: 'readabilityScore', label: 'Readability', icon: 'document-text', color: colors.success },
+  { key: 'grammarScore', label: 'Grammar', icon: 'checkmark-circle', color: colors.warning },
+  { key: 'skillsScore', label: 'Skills Match', icon: 'code-slash', color: colors.info },
+  { key: 'experienceScore', label: 'Experience Relevance', icon: 'briefcase', color: colors.accent.orange },
+  { key: 'projectsScore', label: 'Projects', icon: 'layers', color: colors.accent.violet },
+  { key: 'educationScore', label: 'Education', icon: 'school', color: colors.accent.teal },
+  { key: 'certificationsScore', label: 'Certifications', icon: 'ribbon', color: colors.accent.amber },
+];
 
 export default function ATSScoreScreen() {
   const insets = useSafeAreaInsets();
@@ -80,14 +74,18 @@ export default function ATSScoreScreen() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showTips, setShowTips] = useState(false);
+  const [jdText, setJdText] = useState('');
+  const [analysis, setAnalysis] = useState<AtsAnalysis | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchResumes = useCallback(async () => {
     try {
       const res = await resumeApi.list();
-      setResumes(res.data.data || []);
+      const data = Array.isArray(res.data) ? res.data : res.data?.data || []; setResumes(data);
     } catch {} finally {
       setLoading(false);
       setRefreshing(false);
@@ -114,37 +112,63 @@ export default function ATSScoreScreen() {
     }
   };
 
-  const selected = selectedId ? resumes.find(r => r._id === selectedId) : resumes[0] || null;
-  const displayScore = selected?.ats_score || 0;
-  const computedScores = BREAKDOWN_SEGMENTS.map(s => ({
-    ...s,
-    value: Math.round(displayScore * (s.weight / 100)),
-  }));
+  const handleAnalyze = async () => {
+    if (!selectedId && resumes.length === 0) return;
+    const id = selectedId || (resumes[0]?.id || resumes[0]?._id);
+    if (!id) return;
+    setAnalyzing(true);
+    setError(null);
+    try {
+      const res = await resumeApi.analyzeAts(id, jdText);
+      const score = res.data?.ats_score || res.data?.data?.ats_score || 0;
+      setAnalysis({
+        overallScore: score,
+        atsScore: score,
+        keywordScore: score,
+        formattingScore: score,
+        readabilityScore: score,
+        grammarScore: score,
+        skillsScore: score,
+        experienceScore: score,
+        projectsScore: score,
+        educationScore: score,
+        certificationsScore: score,
+        strengths: score >= 70 ? ['Good keyword usage', 'Clear formatting'] : [],
+        weaknesses: score < 70 ? ['Consider adding more keywords', 'Improve section headings'] : [],
+        suggestions: score < 80 ? ['Add more relevant keywords', 'Use bullet points'] : [],
+      });
+    } catch (e: any) {
+      setError(e?.message || 'Failed to analyze resume. Try again.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const selected = selectedId ? resumes.find(r => (r.id || r._id) === selectedId) : resumes[0] || null;
+  const hasAnalysis = !!analysis;
+
+  const breakdowns: AtsBreakdown[] = analysis
+    ? BREAKDOWN_KEYS.map(b => ({
+        label: b.label,
+        score: Math.min(Math.round((analysis[b.key] as number) || 0), 100),
+        icon: b.icon,
+        color: b.color,
+      }))
+    : [];
 
   return (
     <View style={styles.container}>
+      <ToolHeader title="ATS Score" subtitle="Deep ATS compatibility analysis" gradient={['#06B6D4', '#14B8A6'] as const} icon="speedometer" />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchResumes(); }} tintColor={colors.primary} colors={[colors.primary]} />
         }
       >
-        <Animated.View entering={FadeInUp.delay(100).springify().damping(14)} style={[styles.header, { paddingTop: insets.top + 12 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>ATS Score</Text>
-          <Text style={styles.subtitle}>Deep ATS compatibility analysis</Text>
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(150).springify().damping(14)}>
-          <TouchableOpacity onPress={handleUpload} disabled={uploading} activeOpacity={0.8}>
-            <LinearGradient colors={['#06B6D4', '#14B8A6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.uploadBtn}>
-              <Ionicons name={uploading ? 'hourglass-outline' : 'cloud-upload-outline'} size={20} color="#FFFFFF" />
-              <Text style={styles.uploadText}>{uploading ? 'Uploading...' : 'Upload Resume for ATS Analysis'}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(14)}>
+          <UploadCard onPress={handleUpload} uploading={uploading} uploaded={resumes.length > 0} label="Upload Resume for ATS Analysis" />
         </Animated.View>
 
         {loading && <Loader />}
@@ -155,76 +179,147 @@ export default function ATSScoreScreen() {
 
         {!loading && resumes.length > 0 && (
           <>
-            <Animated.View entering={FadeInDown.delay(200).springify().damping(14)}>
-              <GlassCard style={styles.scoreHero} glowColor={displayScore >= 80 ? colors.success : displayScore >= 60 ? colors.warning : colors.error}>
-                <View style={styles.heroRow}>
-                  <BreakdownRing score={displayScore} />
-                  <View style={styles.heroInfo}>
-                    <Text style={styles.heroTitle}>Overall ATS Score</Text>
-                    <Text style={styles.heroDesc}>
-                      {displayScore >= 80 ? 'Excellent ATS compatibility. Ready for submission.' :
-                       displayScore >= 60 ? 'Good score. Minor optimizations recommended.' :
-                       displayScore > 0 ? 'Below average. Significant improvements needed.' :
-                       'Upload to see your ATS score'}
-                    </Text>
-                    {selected && (
-                      <Text style={styles.heroFile} numberOfLines={1}>{selected.original_filename}</Text>
-                    )}
-                  </View>
-                </View>
-              </GlassCard>
-            </Animated.View>
-
-            <Text style={styles.sectionTitle}>Score Breakdown</Text>
-            {computedScores.map((seg, index) => (
-              <Animated.View key={seg.label} entering={FadeInDown.delay(250 + index * 50).springify().damping(14)}>
-                <BlurView intensity={40} tint="light" style={styles.breakdownCard}>
-                  <View style={styles.breakdownTop}>
-                    <View style={styles.breakdownLeft}>
-                      <View style={[styles.breakIcon, { backgroundColor: seg.color + '18' }]}>
-                        <Ionicons name={seg.icon as any} size={14} color={seg.color} />
-                      </View>
-                      <Text style={styles.breakLabel}>{seg.label}</Text>
+            {selected && (
+              <Animated.View entering={FadeInDown.delay(130).springify().damping(14)}>
+                <GlassCard style={styles.jdCard} glowColor={colors.info}>
+                  <Text style={styles.jdLabel}>Job Description (optional)</Text>
+                  <TextInput
+                    style={styles.jdInput}
+                    placeholder="Paste job description here to compare against your resume..."
+                    placeholderTextColor={colors.textMuted}
+                    value={jdText}
+                    onChangeText={setJdText}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                  <GradientButton
+                    title={analyzing ? 'Analyzing...' : 'Analyze ATS'}
+                    icon={analyzing ? 'hourglass-outline' : 'analytics'}
+                    onPress={handleAnalyze}
+                    loading={analyzing}
+                    gradient={['#06B6D4', '#14B8A6'] as const}
+                    disabled={analyzing}
+                    style={{ marginTop: spacing.sm }}
+                  />
+                  {error && (
+                    <View style={styles.errorRow}>
+                      <Ionicons name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{error}</Text>
                     </View>
-                    <Text style={[styles.breakValue, { color: seg.value >= 80 ? colors.success : seg.value >= 60 ? colors.warning : colors.error }]}>
-                      {seg.value}%
-                    </Text>
-                  </View>
-                  <View style={styles.breakBarBg}>
-                    <View style={[styles.breakBarFill, { width: `${seg.value}%`, backgroundColor: seg.color }]} />
-                  </View>
-                </BlurView>
+                  )}
+                </GlassCard>
               </Animated.View>
-            ))}
+            )}
 
-            <TouchableOpacity onPress={() => setShowTips(!showTips)} activeOpacity={0.7}>
-              <BlurView intensity={40} tint="light" style={styles.tipsToggle}>
-                <Ionicons name="bulb-outline" size={16} color={colors.warning} />
-                <Text style={styles.tipsToggleText}>
-                  {showTips ? 'Hide' : 'Show'} ATS Optimization Tips
-                </Text>
-                <Ionicons name={showTips ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textMuted} />
-              </BlurView>
-            </TouchableOpacity>
+            {analyzing && <Loader />}
 
-            {showTips && (
-              <View style={styles.tipsList}>
-                {ATS_TIPS.map((tip, index) => (
-                  <Animated.View key={index} entering={FadeInDown.delay(100 + index * 40).springify().damping(14)}>
-                    <BlurView intensity={40} tint="light" style={styles.tipItem}>
-                      <Ionicons name={tip.icon as any} size={16} color={colors.warning} />
-                      <Text style={styles.tipText}>{tip.tip}</Text>
+            {!analyzing && hasAnalysis && (
+              <>
+                <Animated.View entering={FadeInDown.delay(200).springify().damping(14)}>
+                  <GlassCard style={styles.scoreHero} glowColor={analysis!.overallScore >= 80 ? colors.success : analysis!.overallScore >= 60 ? colors.warning : colors.error}>
+                    <View style={styles.heroRow}>
+                      <AnimatedScoreRing score={analysis!.overallScore} size={110} strokeWidth={8} label="ATS Score" />
+                      <View style={styles.heroInfo}>
+                        <Text style={styles.heroTitle}>Overall ATS Score</Text>
+                        <Text style={styles.heroDesc}>
+                          {analysis!.overallScore >= 80 ? 'Excellent ATS compatibility. Ready for submission.' :
+                           analysis!.overallScore >= 60 ? 'Good score. Minor optimizations recommended.' :
+                           'Below average. Significant improvements needed.'}
+                        </Text>
+                        {analysis!.jdMatch && (
+                          <Badge label={`JD Match: ${analysis!.jdMatch.matchPercentage}%`} variant="primary" size="sm" />
+                        )}
+                      </View>
+                    </View>
+                  </GlassCard>
+                </Animated.View>
+
+                <SectionHeader title="Score Breakdown" icon="bar-chart" />
+                {breakdowns.map((seg, index) => (
+                  <Animated.View key={seg.label} entering={FadeInDown.delay(250 + index * 50).springify().damping(14)}>
+                    <BlurView intensity={40} tint="light" style={styles.breakdownCard}>
+                      <View style={styles.breakdownTop}>
+                        <View style={styles.breakdownLeft}>
+                          <View style={[styles.breakIcon, { backgroundColor: seg.color + '18' }]}>
+                            <Ionicons name={seg.icon as any} size={14} color={seg.color} />
+                          </View>
+                          <Text style={styles.breakLabel}>{seg.label}</Text>
+                        </View>
+                        <Text style={[styles.breakValue, { color: seg.score >= 80 ? colors.success : seg.score >= 60 ? colors.warning : colors.error }]}>
+                          {seg.score}%
+                        </Text>
+                      </View>
+                      <ProgressBar value={seg.score} color={seg.color} height={5} />
                     </BlurView>
                   </Animated.View>
                 ))}
-              </View>
+
+                {analysis!.strengths && analysis!.strengths.length > 0 && (
+                  <>
+                    <SectionHeader title="Strengths" icon="checkmark-circle" />
+                    {analysis!.strengths.slice(0, 4).map((s, i) => (
+                      <Animated.View key={i} entering={FadeInDown.delay(300 + i * 40).springify().damping(14)}>
+                        <BlurView intensity={40} tint="light" style={styles.tipItem}>
+                          <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                          <Text style={styles.tipText}>{s}</Text>
+                        </BlurView>
+                      </Animated.View>
+                    ))}
+                  </>
+                )}
+
+                {analysis!.suggestions && analysis!.suggestions.length > 0 && (
+                  <>
+                    <SectionHeader title="Suggestions" icon="bulb" />
+                    {analysis!.suggestions.slice(0, 4).map((s, i) => (
+                      <Animated.View key={i} entering={FadeInDown.delay(350 + i * 40).springify().damping(14)}>
+                        <BlurView intensity={40} tint="light" style={styles.tipItem}>
+                          <Ionicons name="bulb" size={16} color={colors.warning} />
+                          <Text style={styles.tipText}>{s}</Text>
+                        </BlurView>
+                      </Animated.View>
+                    ))}
+                  </>
+                )}
+
+                <TouchableOpacity onPress={() => setShowTips(!showTips)} activeOpacity={0.7}>
+                  <BlurView intensity={40} tint="light" style={styles.tipsToggle}>
+                    <Ionicons name="bulb-outline" size={16} color={colors.warning} />
+                    <Text style={styles.tipsToggleText}>
+                      {showTips ? 'Hide' : 'Show'} ATS Optimization Tips
+                    </Text>
+                    <Ionicons name={showTips ? 'chevron-up' : 'chevron-down'} size={14} color={colors.textMuted} />
+                  </BlurView>
+                </TouchableOpacity>
+
+                {showTips && (
+                  <View style={styles.tipsList}>
+                    {ATS_TIPS.map((tip, index) => (
+                      <Animated.View key={index} entering={FadeInDown.delay(100 + index * 40).springify().damping(14)}>
+                        <BlurView intensity={40} tint="light" style={styles.tipItem}>
+                          <Ionicons name={tip.icon as any} size={16} color={colors.warning} />
+                          <Text style={styles.tipText}>{tip.tip}</Text>
+                        </BlurView>
+                      </Animated.View>
+                    ))}
+                  </View>
+                )}
+              </>
             )}
 
-            <Text style={styles.sectionTitle}>Analyzed Resumes</Text>
-            {resumes.map((resume, index) => (
-              <Animated.View key={resume._id} entering={FadeInDown.delay(300 + index * 50).springify().damping(14)}>
-                <TouchableOpacity onPress={() => setSelectedId(resume._id)} activeOpacity={0.8}>
-                  <BlurView intensity={40} tint="light" style={[styles.resumeCard, selectedId === resume._id && styles.resumeCardActive]}>
+            {!analyzing && !hasAnalysis && (
+              <EmptyToolState icon="analytics" title="No Analysis Yet" message="Select a resume and click Analyze to see your ATS score breakdown." />
+            )}
+
+            <SectionHeader title="Analyzed Resumes" icon="document-text" />
+            {resumes.map((resume, index) => {
+              const sc = resume.ats_score || 0;
+              const v = sc >= 80 ? 'success' as const : sc >= 60 ? 'warning' as const : 'error' as const;
+              return (
+              <AnimatedCard key={resume.id || resume._id} index={index} delay={400}>
+                <TouchableOpacity onPress={() => { setSelectedId(resume.id || resume._id); setAnalysis(null); setError(null); }} activeOpacity={0.8}>
+                  <BlurView intensity={40} tint="light" style={[styles.resumeCard, selectedId === (resume.id || resume._id) && styles.resumeCardActive]}>
                     <LinearGradient colors={['#06B6D4', '#14B8A6']} style={styles.resumeIcon}>
                       <Ionicons name="document-text" size={18} color="#FFFFFF" />
                     </LinearGradient>
@@ -232,11 +327,12 @@ export default function ATSScoreScreen() {
                       <Text style={styles.resumeName} numberOfLines={1}>{resume.original_filename}</Text>
                       <Text style={styles.resumeDate}>{formatDate(resume.created_at || '')}</Text>
                     </View>
-                    <Badge label={`${resume.ats_score! || 0} ATS`} variant={resume.ats_score! >= 80 ? 'success' : resume.ats_score! >= 60 ? 'warning' : 'error'} size="sm" />
+                    <BadgePill label={`${sc} ATS`} variant={v} />
                   </BlurView>
                 </TouchableOpacity>
-              </Animated.View>
-            ))}
+              </AnimatedCard>
+            );
+            })}
           </>
         )}
       </ScrollView>
@@ -247,31 +343,24 @@ export default function ATSScoreScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: getTabListBottomPadding() },
-  header: { paddingBottom: spacing.md },
-  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm },
-  title: { fontSize: 28, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
-  uploadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.md, borderRadius: borderRadius.lg, gap: spacing.sm, ...shadow.lg, marginBottom: spacing.md },
+  uploadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.md, borderRadius: borderRadius.lg, gap: spacing.sm, ...shadow.lg, marginBottom: spacing.md, marginTop: spacing.md },
   uploadText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  jdCard: { marginBottom: spacing.md },
+  jdLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: spacing.xs },
+  jdInput: { backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, padding: spacing.md, fontSize: 14, color: colors.text, minHeight: 80, borderWidth: 1, borderColor: colors.border },
+  errorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
+  errorText: { fontSize: 13, color: colors.error, flex: 1 },
   scoreHero: { marginBottom: spacing.md },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  bigRing: { width: 110, height: 110, alignItems: 'center', justifyContent: 'center' },
-  bigRingLabel: { position: 'absolute', alignItems: 'center' },
-  bigRingScore: { fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  bigRingSub: { fontSize: 10, fontWeight: '600', color: colors.textMuted, marginTop: 1 },
   heroInfo: { flex: 1 },
   heroTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   heroDesc: { fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
-  heroFile: { fontSize: 12, color: colors.textMuted, marginTop: spacing.sm, fontStyle: 'italic' },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: spacing.md, marginBottom: spacing.sm },
   breakdownCard: { padding: spacing.md, borderRadius: borderRadius.xl, marginBottom: spacing.sm, overflow: 'hidden' },
   breakdownTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
   breakdownLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   breakIcon: { width: 28, height: 28, borderRadius: 7, justifyContent: 'center', alignItems: 'center' },
   breakLabel: { fontSize: 13, fontWeight: '600', color: colors.text },
   breakValue: { fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  breakBarBg: { height: 5, backgroundColor: colors.borderLight, borderRadius: 3, overflow: 'hidden' },
-  breakBarFill: { height: 5, borderRadius: 3 },
   tipsToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, padding: spacing.md, borderRadius: borderRadius.xl, marginTop: spacing.sm, overflow: 'hidden' },
   tipsToggleText: { fontSize: 13, fontWeight: '600', color: colors.warning },
   tipsList: { gap: spacing.sm, marginTop: spacing.sm },

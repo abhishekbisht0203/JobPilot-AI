@@ -228,6 +228,15 @@ export const savedJobApi = {
   remove: (id: string) => api.delete(`/saved-jobs/${id}`),
 };
 
+// ─── COLD EMAILS (/api/v1/cold-emails/*) ────────────────────────────────
+export const coldEmailApi = {
+  generate: (data: { company: string; job_title: string; recruiter_name?: string; resume_id?: string }) =>
+    api.post('/cold-emails/generate', data),
+  list: () => api.get('/cold-emails'),
+  get: (id: string) => api.get(`/cold-emails/${id}`),
+  send: (id: string) => api.post(`/cold-emails/${id}/send`),
+};
+
 // ─── RESOURCES (/api/v1/resources/*) ────────────────────────────────────
 export const resourceApi = {
   list: (params?: { type?: string; page?: number; per_page?: number }) =>
