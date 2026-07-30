@@ -2,7 +2,7 @@
 
 > **Tagline:** One click. AI applies everywhere.
 > **Platform:** iOS + Android (React Native / Expo)
-> **Backend:** FastAPI + PostgreSQL + Redis + Celery
+> **Backend:** FastAPI + MongoDB + Redis + Celery
 
 ---
 
@@ -48,7 +48,7 @@ JobPilot/
 │   │   │   ├── analytics.py         # Usage stats & insights
 │   │   │   └── webhooks.py          # Email tracking webhooks
 │   │   ├── core/                    # Config, security, DB session
-│   │   ├── models/                  # SQLAlchemy models
+│   │   ├── models/                  # Pydantic models & enums
 │   │   ├── schemas/                 # Pydantic schemas
 │   │   ├── services/                # Business logic
 │   │   │   ├── ai/                  # AI providers (OpenAI, Gemini, Claude)
@@ -57,7 +57,6 @@ JobPilot/
 │   │   │   ├── email/               # Email sending, tracking pixel
 │   │   │   └── jobs/                # Job aggregation & scraping
 │   │   └── tasks/                   # Celery background tasks
-│   ├── alembic/                     # DB migrations
 │   ├── tests/
 │   ├── Dockerfile
 │   └── requirements.txt
@@ -82,13 +81,13 @@ JobPilot/
 | Task | Details |
 |------|---------|
 | Init Expo project | `npx create-expo-app@latest` with TypeScript, Expo Router |
-| Set up backend | FastAPI + PostgreSQL + Alembic migrations |
+| Set up backend | FastAPI + MongoDB |
 | Auth system | Email/password + Google OAuth2; JWT access/refresh tokens |
 | User model | name, email, avatar, plan tier, usage limits |
 | Shared UI kit | Button, Input, Card, Badge, BottomSheet, Loader |
 | Tab navigation | Dashboard, Applications, Resume, Profile |
 | API client | Axios wrapper with auto token refresh |
-| Docker Compose | Backend + PostgreSQL + Redis |
+| Docker Compose | Backend + MongoDB + Redis |
 
 **Key files to create:**
 - `mobile/app/(auth)/login.tsx`, `register.tsx`
@@ -156,7 +155,7 @@ JobPilot/
 | Job models | title, company, platform, url, salary, description, skills, location |
 | Job aggregation | RSS feeds + Playwright for sites that allow it (focus on RemoteOK, We Work Remotely, Y Combinator via API) |
 | For restricted sites | Provide "Add Manually" + bookmarklet; no automated scraping of LinkedIn/Indeed/Naukri |
-| Semantic matching | Store job embeddings in pgvector; cosine similarity against user resume embedding |
+| Semantic matching | Store job embeddings in MongoDB; cosine similarity against user resume embedding |
 | Match scoring | Skill overlap (60%) + experience level (20%) + salary range (20%) |
 | Salary estimation | Use Glassdoor / Levels.fyi data + regression model |
 | Dashboard feed | Infinite scroll job cards with match % badge |
@@ -317,7 +316,7 @@ usage_logs
 | Service | Purpose | Cost |
 |---------|---------|------|
 | OpenAI API | AI generation | Pay-per-token |
-| PGVector | Semantic job matching | Free (PostgreSQL extension) |
+| MongoDB Atlas | Semantic job matching | Free tier available |
 | SendGrid / Resend | Send emails | Free tier available |
 | Stripe | Subscriptions | 2.9% + $0.30 |
 | Firebase Cloud Messaging | Push notifications | Free |

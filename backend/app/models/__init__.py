@@ -1,26 +1,15 @@
-"""Models package for JobPilot AI."""
+import enum
 
-from app.models.user import User, PlanTier
-from app.models.job import Job
-from app.models.resume import Resume, ResumeVersion
-from app.models.application import Application, ApplicationStatus
-from app.models.cover_letter import CoverLetter
-from app.models.cold_email import ColdEmail
-from app.models.mock_interview import MockInterview
-from app.models.skill_gap import SkillGapAnalysis
-from app.models.usage_log import UsageLog
+class PlanTier(str, enum.Enum):
+    FREE = "free"
+    PRO = "pro"
+    TEAM = "team"
 
-__all__ = [
-    "User",
-    "PlanTier",
-    "Job",
-    "Resume",
-    "ResumeVersion",
-    "Application",
-    "ApplicationStatus",
-    "CoverLetter",
-    "ColdEmail",
-    "MockInterview",
-    "SkillGapAnalysis",
-    "UsageLog",
-]
+class ApplicationStatus(str, enum.Enum):
+    SAVED = "saved"
+    APPLIED = "applied"
+    INTERVIEWING = "interviewing"
+    OFFER = "offer"
+    REJECTED = "rejected"
+
+__all__ = ["PlanTier", "ApplicationStatus"]

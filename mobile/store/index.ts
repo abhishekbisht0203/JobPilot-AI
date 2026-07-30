@@ -145,6 +145,20 @@ interface DashboardState {
   setDashboardData: (data: Partial<DashboardState>) => void;
 }
 
+interface DrawerState {
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
+}
+
+export const useDrawerStore = create<DrawerState>((set) => ({
+  isOpen: false,
+  open: () => set({ isOpen: true }),
+  close: () => set({ isOpen: false }),
+  toggle: () => set((s) => ({ isOpen: !s.isOpen })),
+}));
+
 export const useDashboardStore = create<DashboardState>((set) => ({
   totalApplications: 0,
   weeklyApplications: 0,

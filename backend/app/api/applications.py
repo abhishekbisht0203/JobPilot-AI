@@ -1,69 +1,72 @@
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime, timezone
 from ..core.database import get_db
 from ..core.deps import get_current_user
-from ..models.user import User
-from ..models.application import Application, ApplicationStatus
-from ..models.job import Job
+from ..models import ApplicationStatus
 from ..schemas.application import (
     CreateApplicationRequest, UpdateApplicationRequest,
     ApplicationResponse, ApplicationStatsResponse,
 )
 from ..schemas.job import JobResponse
-import uuid
 
 router = APIRouter()
 
 @router.post("", response_model=ApplicationResponse)
 async def create_application(
     req: CreateApplicationRequest,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
-    job = db.query(Job).filter(Job.id == req.job_id).first()
+    db = get_db()
+    job = await db.jobs.find_one({"_id": ObjectId(req.job_id)})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    existing = db.query(Application).filter(
-        Application.user_id == user.id,
-        Application.job_id == req.job_id,
-    ).first()
+    existing = await db.applications.find_one({
+        "user_id": str(user["_id"]),
+        "job_id": req.job_id,
+    })
     if existing:
         raise HTTPException(status_code=400, detail="Already applied to this job")
 
-    application = Application(
-        user_id=user.id,
-        job_id=req.job_id,
-        status=ApplicationStatus.SAVED,
-        notes=req.notes,
-    )
-    db.add(application)
-    db.commit()
-    db.refresh(application)
-    return ApplicationResponse.model_validate(application)
+    now = datetime.now(timezone.utc)
+    doc = {
+        "user_id": str(user["_id"]),
+        "job_id": req.job_id,
+        "status": ApplicationStatus.SAVED.value,
+        "notes": req.notes,
+        "applied_at": None,
+        "follow_up_at": None,
+        "created_at": now,
+        "updated_at": now,
+    }
+    result = await db.applications.insert_one(doc)
+    doc["id"] = str(result.inserted_id)
+    return ApplicationResponse.model_validate(doc)
 
 @router.get("", response_model=dict)
 async def list_applications(
     status: Optional[str] = None,
     page: int = Query(1, ge=1),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
-    query = db.query(Application).filter(Application.user_id == user.id)
+    db = get_db()
+    filter_query = {"user_id": str(user["_id"])}
     if status:
-        query = query.filter(Application.status == status)
+        filter_query["status"] = status
 
-    total = query.count()
-    apps = query.order_by(desc(Application.created_at)).offset((page - 1) * 20).limit(20).all()
+    total = await db.applications.count_documents(filter_query)
+    cursor = db.applications.find(filter_query).sort("created_at", -1).skip((page - 1) * 20).limit(20)
+    apps = await cursor.to_list(length=20)
 
     result = []
     for app in apps:
+        app["id"] = str(app.pop("_id"))
         app_data = ApplicationResponse.model_validate(app).model_dump()
-        job = db.query(Job).filter(Job.id == app.job_id).first()
+        job = await db.jobs.find_one({"_id": ObjectId(app["job_id"])})
         if job:
+            job["id"] = str(job.pop("_id"))
             app_data["job"] = JobResponse.model_validate(job).model_dump()
         result.append(app_data)
 
@@ -71,58 +74,65 @@ async def list_applications(
 
 @router.patch("/{application_id}", response_model=ApplicationResponse)
 async def update_application(
-    application_id: uuid.UUID,
+    application_id: str,
     req: UpdateApplicationRequest,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
-    app = db.query(Application).filter(
-        Application.id == application_id,
-        Application.user_id == user.id,
-    ).first()
+    db = get_db()
+    app = await db.applications.find_one({
+        "_id": ObjectId(application_id),
+        "user_id": str(user["_id"]),
+    })
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
 
+    update = {"updated_at": datetime.now(timezone.utc)}
     if req.status:
-        app.status = req.status
-        if req.status == "applied" and not app.applied_at:
-            app.applied_at = datetime.now(timezone.utc)
+        update["status"] = req.status
+        if req.status == "applied" and not app.get("applied_at"):
+            update["applied_at"] = datetime.now(timezone.utc)
     if req.notes is not None:
-        app.notes = req.notes
+        update["notes"] = req.notes
 
-    db.commit()
-    db.refresh(app)
+    await db.applications.update_one({"_id": app["_id"]}, {"$set": update})
+    app.update(update)
+    app["id"] = str(app.pop("_id"))
     return ApplicationResponse.model_validate(app)
 
 @router.delete("/{application_id}")
 async def delete_application(
-    application_id: uuid.UUID,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    application_id: str,
+    user: dict = Depends(get_current_user),
 ):
-    app = db.query(Application).filter(
-        Application.id == application_id,
-        Application.user_id == user.id,
-    ).first()
+    db = get_db()
+    app = await db.applications.find_one({
+        "_id": ObjectId(application_id),
+        "user_id": str(user["_id"]),
+    })
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
-    db.delete(app)
-    db.commit()
+    await db.applications.delete_one({"_id": app["_id"]})
     return {"message": "Application deleted"}
 
 @router.get("/stats", response_model=ApplicationStatsResponse)
 async def get_application_stats(
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
-    apps = db.query(Application).filter(Application.user_id == user.id).all()
-    stats = {"saved": 0, "applied": 0, "interviewing": 0, "offer": 0, "rejected": 0}
-    for app in apps:
-        status = app.status.value if hasattr(app.status, 'value') else app.status
-        if status in stats:
-            stats[status] += 1
+    db = get_db()
+    pipeline = [
+        {"$match": {"user_id": str(user["_id"])}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+    ]
+    cursor = db.applications.aggregate(pipeline)
+    counts = await cursor.to_list(length=10)
 
-    return ApplicationStatsResponse(
-        **stats,
-        total=len(apps),
-    )
+    stats = {"saved": 0, "applied": 0, "interviewing": 0, "offer": 0, "rejected": 0}
+    total = 0
+    for row in counts:
+        status = row["_id"]
+        count = row["count"]
+        total += count
+        if status in stats:
+            stats[status] = count
+
+    return ApplicationStatsResponse(**stats, total=total)

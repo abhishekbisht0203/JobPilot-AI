@@ -1,14 +1,20 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { Platform } from 'react-native';
 import { useAuthStore } from '../store';
+import { API_URL, API_TIMEOUT, API_RETRY_COUNT, API_RETRY_DELAY } from './config';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const log = (label: string, data: any) => {
+  if (__DEV__) {
+    console.log(`[API][${label}]`, typeof data === 'object' ? JSON.stringify(data, null, 2) : data);
+  }
+};
+
+log('INIT', { apiUrl: API_URL, platform: Platform.OS, timeout: API_TIMEOUT });
 
 const api: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_URL,
+  timeout: API_TIMEOUT,
+  headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use(
@@ -17,28 +23,76 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    log('REQUEST', {
+      method: config.method?.toUpperCase(),
+      url: config.baseURL ? `${config.baseURL}${config.url}` : config.url,
+      platform: Platform.OS,
+    });
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+let isLoggingOut = false;
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    log('RESPONSE', {
+      status: response.status,
+      url: `${response.config.baseURL}${response.config.url}`,
+    });
+    return response;
+  },
   async (error: AxiosError<{ detail?: string; error?: string; message?: string }>) => {
+    const config = error.config as InternalAxiosRequestConfig & { _retryCount?: number };
+
     if (error.response) {
       const data = error.response.data;
       const backendMsg = data?.detail || data?.error || data?.message || '';
+      const status = error.response.status;
+
+      log('RESPONSE_ERROR', {
+        status,
+        url: `${config.baseURL}${config.url}`,
+        body: data,
+        message: backendMsg || error.message,
+      });
+
       if (backendMsg) {
         error.message = backendMsg;
       }
-      if (error.response.status === 401) {
+
+      if (status === 401 && !isLoggingOut) {
+        isLoggingOut = true;
         useAuthStore.getState().logout();
+        setTimeout(() => { isLoggingOut = false; }, 2000);
       }
     } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+      log('NETWORK_ERROR', {
+        url: `${config.baseURL}${config.url}`,
+        platform: Platform.OS,
+        apiUrl: API_URL,
+      });
+
+      if (config._retryCount === undefined) {
+        config._retryCount = 0;
+      }
+
+      if (config._retryCount! < API_RETRY_COUNT) {
+        config._retryCount! += 1;
+        log('RETRY', { attempt: config._retryCount, url: `${config.baseURL}${config.url}` });
+        await new Promise((r) => setTimeout(r, API_RETRY_DELAY * config._retryCount!));
+        return api(config);
+      }
+
       error.message = 'Cannot connect to server. Check if backend is running.';
     } else if (error.code === 'ECONNABORTED') {
+      log('TIMEOUT', { url: `${config.baseURL}${config.url}`, timeout: API_TIMEOUT });
       error.message = 'Request timed out. Backend may be overloaded.';
+    } else {
+      log('UNKNOWN_ERROR', { code: error.code, message: error.message });
     }
+
     return Promise.reject(error);
   }
 );

@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
-import uuid
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -13,7 +12,9 @@ class RegisterRequest(BaseModel):
     password: str
 
 class GoogleAuthRequest(BaseModel):
-    token: str
+    id_token: Optional[str] = None
+    code: Optional[str] = None
+    state: Optional[str] = None
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
@@ -27,8 +28,15 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
 
+class GitHubAuthRequest(BaseModel):
+    code: str
+    state: Optional[str] = None
+
+class GitHubUrlResponse(BaseModel):
+    url: str
+
 class UserResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     email: str
     name: str
     avatar_url: Optional[str] = None
@@ -36,9 +44,6 @@ class UserResponse(BaseModel):
     daily_usage_count: int
     usage_reset_at: datetime
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class AuthResponse(BaseModel):
     user: UserResponse

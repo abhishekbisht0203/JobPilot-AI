@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     API_PREFIX: str = "/api/v1"
 
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/jobpilot"
+    DATABASE_URL: str = "mongodb://localhost:27017"
 
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
@@ -31,6 +31,16 @@ class Settings(BaseSettings):
 
     STRIPE_SECRET_KEY: Optional[str] = None
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
+
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_REDIRECT_URI: str = "http://localhost:5173/auth/google/callback"
+
+    GITHUB_CLIENT_ID: Optional[str] = None
+    GITHUB_CLIENT_SECRET: Optional[str] = None
+    GITHUB_REDIRECT_URI: str = "http://localhost:5173/auth/github/callback"
+
+    MONGO_DB_NAME: str = "job-pilot-web"
 
     FREE_DAILY_LIMIT: int = 10
     PRO_DAILY_LIMIT: int = 100

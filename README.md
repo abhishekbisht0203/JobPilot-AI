@@ -14,8 +14,7 @@ JobPilot AI is a full-stack mobile application that serves as an AI-powered care
 | **State** | Zustand 4.5 with AsyncStorage persistence |
 | **UI** | Custom dark-mode-first component library, Reanimated 3 |
 | **Backend** | Python 3.12, FastAPI, Uvicorn |
-| **ORM** | SQLAlchemy 2.0 + Alembic |
-| **Database** | PostgreSQL 16 (PGVector for embeddings) |
+| **Database** | MongoDB (Motor + PyMongo) |
 | **Cache / Queue** | Redis 7 |
 | **Async Tasks** | Celery 5.4 |
 | **AI** | OpenAI GPT-4o, Gemini 1.5 Pro, Claude 3.5 Sonnet (pluggable) |
@@ -70,7 +69,7 @@ JobPilot AI is a full-stack mobile application that serves as an AI-powered care
 - Node.js 18+
 - Expo CLI (`npm install -g expo-cli`)
 - Docker Desktop (optional, for infrastructure)
-- PostgreSQL 16 + Redis 7 (if running without Docker)
+- MongoDB + Redis 7 (if running without Docker)
 
 ### Backend Setup
 
@@ -80,7 +79,6 @@ python -m venv venv
 # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp ..\.env.example ..\.env   # Configure your environment variables
-alembic upgrade head
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -102,7 +100,7 @@ cd infrastructure
 docker-compose up -d
 ```
 
-This starts: FastAPI backend, Celery worker + beat scheduler, PostgreSQL 16, Redis 7, and Nginx reverse proxy.
+This starts: FastAPI backend, Celery worker + beat scheduler, Redis 7, and Nginx reverse proxy.
 
 ---
 
@@ -113,7 +111,7 @@ This starts: FastAPI backend, Celery worker + beat scheduler, PostgreSQL 16, Red
 │   ├── app/
 │   │   ├── api/          # REST API routers
 │   │   ├── core/         # Config, security, database
-│   │   ├── models/       # SQLAlchemy ORM models
+│   │   ├── models/       # Pydantic models & enums
 │   │   ├── schemas/      # Pydantic request/response schemas
 │   │   ├── services/     # Business logic (AI, matching, email, billing)
 │   │   └── tasks/        # Celery background tasks
@@ -147,7 +145,7 @@ Key variables (see `.env.example` for the full list):
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
+| `DATABASE_URL` | MongoDB connection string |
 | `SECRET_KEY` | JWT signing secret |
 | `REDIS_URL` | Redis connection string |
 | `OPENAI_API_KEY` | OpenAI API key (or Gemini/Anthropic) |

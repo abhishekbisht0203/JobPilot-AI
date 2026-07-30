@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from ..core.database import get_db
 from ..core.deps import get_current_user
-from ..models.user import User
 from ..schemas.auth import UserResponse
 
 router = APIRouter()
@@ -11,13 +9,18 @@ router = APIRouter()
 async def update_profile(
     name: str = None,
     avatar_url: str = None,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
 ):
+    db = get_db()
+    update = {}
     if name:
-        user.name = name
+        update["name"] = name
     if avatar_url:
-        user.avatar_url = avatar_url
-    db.commit()
-    db.refresh(user)
+        update["avatar_url"] = avatar_url
+
+    if update:
+        await db.users.update_one({"_id": user["_id"]}, {"$set": update})
+        user.update(update)
+
+    user["id"] = str(user["_id"])
     return UserResponse.model_validate(user)

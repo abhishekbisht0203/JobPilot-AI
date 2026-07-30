@@ -65,9 +65,6 @@ def setup_logging():
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
 
-    sqlalchemy_logger = logging.getLogger("sqlalchemy.engine")
-    sqlalchemy_logger.setLevel(logging.WARN)
-
     return logging.getLogger("jobpilot")
 
 

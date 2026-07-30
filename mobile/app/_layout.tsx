@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet, Animated, Platform, Easing } from 'react-native';
+import { StyleSheet, Animated } from 'react-native';
 import { colors } from '../lib/theme';
+import Drawer from '../components/drawer/Drawer';
 import '../lib/errorHandler';
 
 let ToastComponent = () => null;
@@ -60,6 +61,7 @@ export default function RootLayout() {
             animation: 'slide_from_right',
           }}
         />
+        <Drawer />
         <ToastComponent />
       </GestureHandlerRootView>
     </ErrorBoundary>

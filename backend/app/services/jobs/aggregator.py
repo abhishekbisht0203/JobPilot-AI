@@ -1,8 +1,6 @@
 import httpx
 from datetime import datetime, timezone
 from typing import List, Optional
-from sqlalchemy.orm import Session
-from ...models.job import Job
 import asyncio
 import re
 

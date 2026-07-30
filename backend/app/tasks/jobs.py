@@ -1,21 +1,19 @@
-from ..core.database import SessionLocal
-from ..models.job import Job
+from ..core.database import get_sync_db
 from ..services.jobs.aggregator import aggregate_all_jobs
 import asyncio
 
 def fetch_jobs_task():
     jobs_data = asyncio.run(aggregate_all_jobs())
-    db = SessionLocal()
-    try:
-        for job_data in jobs_data:
-            existing = db.query(Job).filter(
-                Job.url == job_data["url"],
-                Job.company == job_data["company"],
-            ).first()
-            if not existing:
-                job = Job(**job_data)
-                db.add(job)
-        db.commit()
-        print(f"Fetched {len(jobs_data)} new jobs")
-    finally:
-        db.close()
+    db = get_sync_db()
+    count = 0
+
+    for job_data in jobs_data:
+        existing = db.jobs.find_one({
+            "url": job_data["url"],
+            "company": job_data["company"],
+        })
+        if not existing:
+            db.jobs.insert_one(job_data)
+            count += 1
+
+    print(f"Fetched {count} new jobs")

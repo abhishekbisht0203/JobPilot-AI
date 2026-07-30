@@ -3,18 +3,14 @@ import traceback
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError, ProgrammingError, OperationalError
-from jose import JWTError
 from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from .core.config import settings
-from .core.database import engine, Base
+from .core.database import connect_db, close_db
 from .core.logging_config import setup_logging
 from .api.router import api_router
 
 logger = setup_logging()
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -27,11 +23,7 @@ class ExceptionLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
             return await call_next(request)
-        except HTTPException as http_exc:
-            logger.error(
-                f"HTTP {http_exc.status_code}: {http_exc.detail}\n"
-                f"Path: {request.method} {request.url.path}"
-            )
+        except HTTPException:
             raise
         except Exception as exc:
             tb = traceback.format_exc()
@@ -49,19 +41,7 @@ class ExceptionLoggingMiddleware(BaseHTTPMiddleware):
             )
             status_code = 500
             detail = "Internal server error"
-            if isinstance(exc, IntegrityError):
-                detail = str(exc.orig) if exc.orig else "Database integrity error"
-                status_code = 409
-            elif isinstance(exc, ProgrammingError):
-                detail = str(exc.orig) if exc.orig else "Database query error"
-                status_code = 400
-            elif isinstance(exc, OperationalError):
-                detail = "Database connection failed"
-                status_code = 503
-            elif isinstance(exc, JWTError):
-                detail = "Invalid or expired token"
-                status_code = 401
-            elif isinstance(exc, ValidationError):
+            if isinstance(exc, ValidationError):
                 detail = str(exc)
                 status_code = 422
             return JSONResponse(
@@ -74,7 +54,6 @@ class ExceptionLoggingMiddleware(BaseHTTPMiddleware):
                 },
             )
 
-
 app.add_middleware(ExceptionLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -86,6 +65,14 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_PREFIX)
 
+@app.on_event("startup")
+async def startup():
+    await connect_db()
+    logger.info(f"Connected to MongoDB: {settings.MONGO_DB_NAME}")
+
+@app.on_event("shutdown")
+async def shutdown():
+    await close_db()
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -111,7 +98,6 @@ async def global_exception_handler(request: Request, exc: Exception):
             "path": request.url.path,
         },
     )
-
 
 @app.get("/health")
 async def health_check():
