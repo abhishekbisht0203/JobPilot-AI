@@ -1,17 +1,12 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { StyleSheet, Platform, View, Text, TouchableOpacity } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing, interpolate, FadeInUp, FadeIn,
-} from 'react-native-reanimated';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
 import { useAuthStore, useDrawerStore } from '../../store';
 import { MeshGradient } from '../../components/ui/MeshGradient';
-import { getTabBarHeight, getTabListBottomPadding } from '../../components/ui/TabBarHeight';
 
 const TABS = [
   { name: 'index', label: 'Home', icon: 'grid-outline' as const, activeIcon: 'grid' as const },
@@ -20,94 +15,57 @@ const TABS = [
   { name: 'profile', label: 'Profile', icon: 'person-outline' as const, activeIcon: 'person' as const },
 ];
 
-function TabIcon({ icon, activeIcon, focused, index }: {
-  icon: keyof typeof Ionicons.glyphMap;
-  activeIcon: keyof typeof Ionicons.glyphMap;
-  focused: boolean;
-  index: number;
-}) {
-  const scale = useSharedValue(focused ? 1 : 0.6);
-  const translateY = useSharedValue(focused ? -4 : 0);
-
-  useEffect(() => {
-    scale.value = withSpring(focused ? 1 : 0.6, { stiffness: 300, damping: 15 });
-    translateY.value = withSpring(focused ? -4 : 0, { stiffness: 300, damping: 15 });
-  }, [focused]);
-
-  const animatedIconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { translateY: translateY.value },
-    ],
-  }));
-
-  return (
-    <Animated.View style={[styles.iconContainer, animatedIconStyle]}>
-      <Ionicons
-        name={focused ? activeIcon : icon}
-        size={22}
-        color={focused ? colors.primary : colors.textMuted}
-      />
-    </Animated.View>
-  );
-}
-
 function TabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = getTabBarHeight();
+
+  const visibleRoutes = useMemo(
+    () => state.routes.filter((r: any) => {
+      const desc = descriptors[r.key];
+      return desc?.options?.href !== null;
+    }),
+    [state.routes, descriptors]
+  );
 
   return (
-    <BlurView
-      intensity={80}
-      tint="light"
-      style={[
-        styles.tabBar,
-        {
-          height: tabBarHeight,
-          paddingBottom: insets.bottom + 4,
-        },
-      ]}
-    >
+    <View style={[styles.tabBarOuter, { paddingBottom: insets.bottom + 4 }]}>
       <View style={styles.tabBarInner}>
-        <View style={styles.tabBarBorder} pointerEvents="none" />
-        {state.routes.map((route: any, index: number) => {
+        {visibleRoutes.map((route: any, index: number) => {
           const { options } = descriptors[route.key];
           const label = options.tabBarLabel || options.title || route.name;
           const isFocused = state.index === index;
-          const tab = TABS.find(t => route.name === t.name || `/${t.name}` === route.name);
-          const tabIndex = TABS.findIndex(t => route.name === t.name);
-
-          const onPress = () => {
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
+          const tab = TABS.find(t => route.name === t.name);
+          if (!tab) return null;
 
           return (
             <TouchableOpacity
               key={route.key}
-              onPress={onPress}
-              activeOpacity={1}
+              onPress={() => {
+                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                if (!isFocused && !event.defaultPrevented) {
+                  navigation.navigate(route.name);
+                }
+              }}
+              activeOpacity={0.7}
               style={styles.tabItem}
+              accessibilityLabel={label}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isFocused }}
             >
-              {tab && (
-                <TabIcon
-                  icon={tab.icon}
-                  activeIcon={tab.activeIcon}
-                  focused={isFocused}
-                  index={tabIndex}
+              <View style={[styles.tabIconWrap, isFocused && styles.tabIconWrapActive]}>
+                <Ionicons
+                  name={isFocused ? tab.activeIcon : tab.icon}
+                  size={22}
+                  color={isFocused ? '#FFFFFF' : colors.textMuted}
                 />
-              )}
-              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+              </View>
+              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]} numberOfLines={1}>
                 {label}
               </Text>
-              {isFocused && <View style={styles.activeDot} />}
             </TouchableOpacity>
           );
         })}
       </View>
-    </BlurView>
+    </View>
   );
 }
 
@@ -147,7 +105,7 @@ export default function TabsLayout() {
         <Text style={styles.headerTitle}>JobPilot AI</Text>
         <TouchableOpacity
           style={styles.notifBtn}
-          onPress={() => router.push('/(tabs)/profile' as any)}
+          onPress={() => router.push('/(tabs)/quick-actions/notifications' as any)}
           activeOpacity={0.7}
           accessibilityLabel="Notifications"
           accessibilityRole="button"
@@ -155,15 +113,30 @@ export default function TabsLayout() {
           <Ionicons name="notifications-outline" size={22} color={colors.text} />
         </TouchableOpacity>
       </View>
-      <Tabs
-        tabBar={(props) => <TabBar {...props} />}
-        screenOptions={{ headerShown: false }}
-      >
-        <Tabs.Screen name="index" options={{ tabBarLabel: 'Home' }} />
-        <Tabs.Screen name="applications" options={{ tabBarLabel: 'Apps' }} />
-        <Tabs.Screen name="resume" options={{ tabBarLabel: 'Resume' }} />
-        <Tabs.Screen name="profile" options={{ tabBarLabel: 'Profile' }} />
-      </Tabs>
+      <View style={styles.tabsContent}>
+        <Tabs
+          tabBar={(props) => <TabBar {...props} />}
+          screenOptions={{ headerShown: false }}
+        >
+          <Tabs.Screen name="index" options={{ tabBarLabel: 'Home' }} />
+          <Tabs.Screen name="applications" options={{ tabBarLabel: 'Apps' }} />
+          <Tabs.Screen name="resume" options={{ tabBarLabel: 'Resume' }} />
+          <Tabs.Screen name="profile" options={{ tabBarLabel: 'Profile' }} />
+          <Tabs.Screen name="find-jobs" options={{ href: null }} />
+          <Tabs.Screen name="browse-companies" options={{ href: null }} />
+          <Tabs.Screen name="pricing" options={{ href: null }} />
+          <Tabs.Screen name="contact" options={{ href: null }} />
+          <Tabs.Screen name="about" options={{ href: null }} />
+          <Tabs.Screen name="settings" options={{ href: null }} />
+          <Tabs.Screen name="career-tools" options={{ href: null }} />
+          <Tabs.Screen name="resources" options={{ href: null }} />
+          <Tabs.Screen name="quick-actions" options={{ href: null }} />
+          <Tabs.Screen name="companies" options={{ href: null }} />
+          <Tabs.Screen name="privacy" options={{ href: null }} />
+          <Tabs.Screen name="terms" options={{ href: null }} />
+          <Tabs.Screen name="admin" options={{ href: null }} />
+        </Tabs>
+      </View>
     </View>
   );
 }
@@ -212,55 +185,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 12,
-    right: 12,
-    borderRadius: borderRadius.xxl,
-    overflow: 'hidden',
-    ...shadow.xl,
+  tabsContent: {
+    flex: 1,
+  },
+  tabBarOuter: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
   },
   tabBarInner: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    flex: 1,
-    paddingHorizontal: spacing.sm,
-    paddingTop: 6,
-  },
-  tabBarBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    borderRadius: borderRadius.xxl,
+    alignItems: 'center',
+    height: 60,
+    paddingHorizontal: 4,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
-  iconContainer: {
+  tabIconWrap: {
     width: 32,
-    height: 32,
+    height: 28,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  tabIconWrapActive: {
+    backgroundColor: colors.primary,
   },
   tabLabel: {
     fontSize: 10,
     fontWeight: '500',
     color: colors.textMuted,
-    marginTop: 1,
+    marginTop: 3,
+    textAlign: 'center',
   },
   tabLabelActive: {
     color: colors.primary,
     fontWeight: '600',
-  },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
-    marginTop: 2,
   },
 });

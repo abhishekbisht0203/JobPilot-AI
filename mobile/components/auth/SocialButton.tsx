@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface SocialButtonProps {
@@ -21,8 +22,8 @@ export default function SocialButton({ provider, onPress }: SocialButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      onPressIn={() => Animated.spring(scale, { toValue: 0.97, stiffness: 400, damping: 20, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scale, { toValue: 1, stiffness: 400, damping: 20, useNativeDriver: true }).start()}
+      onPressIn={() => Animated.spring(scale, { toValue: 0.97, stiffness: 400, damping: 20, useNativeDriver: Platform.OS !== `web` }).start()}
+      onPressOut={() => Animated.spring(scale, { toValue: 1, stiffness: 400, damping: 20, useNativeDriver: Platform.OS !== `web` }).start()}
       activeOpacity={1}
       style={{ flex: 1 }}
     >
@@ -46,3 +47,4 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: 14, fontWeight: '600' },
 });
+

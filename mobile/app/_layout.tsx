@@ -2,8 +2,9 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet, Animated } from 'react-native';
+import { StyleSheet, Animated, useColorScheme } from 'react-native';
 import { colors } from '../lib/theme';
+import { useThemeStore } from '../store';
 import Drawer from '../components/drawer/Drawer';
 import '../lib/errorHandler';
 
@@ -49,15 +50,26 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+function ThemeStatusBar() {
+  const systemScheme = useColorScheme();
+  const storeTheme = useThemeStore((s) => s.theme);
+  const isDark = storeTheme === 'dark' || (storeTheme === 'system' && systemScheme === 'dark');
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
+  const systemScheme = useColorScheme();
+  const storeTheme = useThemeStore((s) => s.theme);
+  const isDark = storeTheme === 'dark' || (storeTheme === 'system' && systemScheme === 'dark');
+
   return (
     <ErrorBoundary>
-      <GestureHandlerRootView style={styles.root}>
-        <StatusBar style="dark" />
+      <GestureHandlerRootView style={[styles.root, { backgroundColor: isDark ? colors.dark.background : colors.background }]}>
+        <ThemeStatusBar />
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
+            contentStyle: { backgroundColor: isDark ? colors.dark.background : colors.background },
             animation: 'slide_from_right',
           }}
         />

@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ViewStyle, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing, interpolateColor,
 } from 'react-native-reanimated';
@@ -9,7 +8,7 @@ import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
 
 interface GlassCardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
   onPress?: () => void;
   intensity?: number;
   glowColor?: string;
@@ -47,7 +46,7 @@ export function GlassCard({
       {glowColor && (
         <Animated.View style={[styles.glow, { backgroundColor: glowColor }, glowStyle]} />
       )}
-      <BlurView intensity={intensity} tint="light" style={styles.blur}>
+      <View style={styles.cardBg}>
         {gradient ? (
           <LinearGradient
             colors={gradientColors || ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.6)']}
@@ -63,7 +62,7 @@ export function GlassCard({
           </View>
         )}
         <View style={styles.border} pointerEvents="none" />
-      </BlurView>
+      </View>
     </Animated.View>
   );
 
@@ -86,12 +85,12 @@ export function GlassCard({
 const styles = StyleSheet.create({
   wrapper: {
     borderRadius: borderRadius.xl,
-    overflow: 'hidden',
     ...shadow.lg,
   },
-  blur: {
+  cardBg: {
     borderRadius: borderRadius.xl,
     overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   content: {
     padding: spacing.md,

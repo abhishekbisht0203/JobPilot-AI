@@ -1,78 +1,96 @@
-import { Dimensions, Platform } from 'react-native';
+import { Dimensions, Platform, TextStyle } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const screen = { width: SCREEN_WIDTH, height: SCREEN_HEIGHT };
 
 export const colors = {
-  primary: '#3B82F6',
-  primaryDark: '#1D4ED8',
-  primaryLight: '#60A5FA',
-  primaryBg: '#EFF6FF',
-  gradientStart: '#3B82F6',
-  gradientEnd: '#60A5FA',
-  gradientPurple: '#8B5CF6',
-  gradientCoral: '#F472B6',
-  secondary: '#8B5CF6',
-  secondaryDark: '#6D28D9',
-  secondaryLight: '#A78BFA',
-  secondaryBg: '#F5F3FF',
-  success: '#10B981',
-  successLight: '#D1FAE5',
-  successDark: '#059669',
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
-  warningDark: '#D97706',
-  error: '#EF4444',
-  errorLight: '#FEE2E2',
-  errorDark: '#DC2626',
-  info: '#06B6D4',
-  infoLight: '#CFFAFE',
-  background: '#F8FAFC',
+  // LinkedIn-inspired primary
+  primary: '#0A66C2',
+  primaryDark: '#004182',
+  primaryLight: '#2563EB',
+  primaryBg: '#E8F0FE',
+
+  secondary: '#2F81F7',
+  secondaryDark: '#1A5BBF',
+  secondaryLight: '#5B9CF6',
+  secondaryBg: '#E8F0FE',
+
+  // Status colors
+  success: '#057642',
+  successLight: '#E1F3EB',
+  error: '#CC1016',
+  errorLight: '#FDE7E9',
+  warning: '#E68A00',
+  warningLight: '#FFF3E0',
+  info: '#0A66C2',
+  infoLight: '#E8F0FE',
+
+  // Light mode
+  background: '#F3F2EF',
   surface: '#FFFFFF',
-  surfaceLight: '#F1F5F9',
+  surfaceLight: '#F3F2EF',
   surfaceElevated: '#FFFFFF',
-  border: '#E2E8F0',
-  borderLight: '#F1F5F9',
-  text: '#0F172A',
-  textSecondary: '#475569',
-  textMuted: '#94A3B8',
+  border: '#E5E7EB',
+  borderLight: '#EFF1F3',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
   textInverse: '#FFFFFF',
   white: '#FFFFFF',
   black: '#000000',
-  cardOverlay: 'rgba(0,0,0,0.2)',
-  glassBg: 'rgba(255,255,255,0.72)',
-  glassBorder: 'rgba(255,255,255,0.25)',
-  glassStops: 'rgba(255,255,255,0.35)',
+
+  // Glass morphism
+  cardOverlay: 'rgba(0,0,0,0.15)',
+  glassBg: 'rgba(255,255,255,0.78)',
+  glassBorder: 'rgba(255,255,255,0.3)',
+  glassStops: 'rgba(255,255,255,0.4)',
   backdrop: 'rgba(0,0,0,0.5)',
   overlay: 'rgba(0,0,0,0.6)',
-  highlight: 'rgba(59,130,246,0.08)',
-  accent: {
-    blue: '#3B82F6',
-    indigo: '#6366F1',
-    violet: '#8B5CF6',
-    pink: '#EC4899',
-    rose: '#F43F5E',
-    orange: '#F97316',
-    amber: '#F59E0B',
-    teal: '#14B8A6',
-    cyan: '#06B6D4',
-    emerald: '#10B981',
+  highlight: 'rgba(10,102,194,0.08)',
+
+  // Dark mode
+  dark: {
+    background: '#0D1117',
+    surface: '#161B22',
+    surfaceLight: '#1F2937',
+    border: '#1F2937',
+    borderLight: '#1F2937',
+    text: '#F3F4F6',
+    textSecondary: '#9CA3AF',
+    textMuted: '#6B7280',
+    primary: '#2F81F7',
+    primaryBg: '#0D2847',
+    highlight: 'rgba(47,129,247,0.12)',
   },
+
+  accent: {
+    blue: '#0A66C2',
+    indigo: '#4F46E5',
+    violet: '#7C3AED',
+    pink: '#DB2777',
+    rose: '#E11D48',
+    orange: '#EA580C',
+    amber: '#D97706',
+    teal: '#0D9488',
+    cyan: '#0891B2',
+    emerald: '#059669',
+  },
+
   gradient: {
-    blue: ['#3B82F6', '#60A5FA'] as const,
-    purple: ['#8B5CF6', '#6366F1'] as const,
-    coral: ['#F472B6', '#EC4899'] as const,
-    sunset: ['#F97316', '#F59E0B'] as const,
-    teal: ['#14B8A6', '#06B6D4'] as const,
-    indigo: ['#6366F1', '#8B5CF6'] as const,
-    primary: ['#3B82F6', '#6366F1'] as const,
-    success: ['#10B981', '#34D399'] as const,
-    warning: ['#F59E0B', '#FBBF24'] as const,
-    error: ['#EF4444', '#F87171'] as const,
-    midnight: ['#1E293B', '#334155'] as const,
-    aurora: ['#06B6D4', '#10B981'] as const,
-    nebula: ['#6366F1', '#EC4899'] as const,
+    blue: ['#0A66C2', '#2563EB'] as const,
+    purple: ['#7C3AED', '#4F46E5'] as const,
+    coral: ['#F472B6', '#DB2777'] as const,
+    sunset: ['#EA580C', '#D97706'] as const,
+    teal: ['#0D9488', '#0891B2'] as const,
+    indigo: ['#4F46E5', '#7C3AED'] as const,
+    primary: ['#0A66C2', '#2563EB'] as const,
+    success: ['#057642', '#059669'] as const,
+    warning: ['#D97706', '#F59E0B'] as const,
+    error: ['#CC1016', '#EF4444'] as const,
+    midnight: ['#0D1117', '#161B22'] as const,
+    aurora: ['#0891B2', '#059669'] as const,
+    nebula: ['#4F46E5', '#DB2777'] as const,
   },
 };
 
@@ -98,7 +116,7 @@ export const borderRadius = {
   full: 9999,
 };
 
-export const typography = {
+export const typography: Record<string, TextStyle> = {
   hero: { fontSize: 40, fontWeight: '800', lineHeight: 48, letterSpacing: -1.2 },
   h1: { fontSize: 30, fontWeight: '700', lineHeight: 38, letterSpacing: -0.6 },
   h2: { fontSize: 24, fontWeight: '700', lineHeight: 32, letterSpacing: -0.4 },
@@ -143,34 +161,24 @@ export const shadow = {
   }) as any,
   glow: {
     primary: Platform.select({
-      ios: { shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
+      ios: { shadowColor: '#0A66C2', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
       android: { elevation: 8 },
-      web: { boxShadow: '0 2px 16px rgba(59,130,246,0.3)' },
+      web: { boxShadow: '0 2px 16px rgba(10,102,194,0.3)' },
     }) as any,
     success: Platform.select({
-      ios: { shadowColor: '#10B981', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
+      ios: { shadowColor: '#057642', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
       android: { elevation: 8 },
-      web: { boxShadow: '0 2px 16px rgba(16,185,129,0.3)' },
+      web: { boxShadow: '0 2px 16px rgba(5,118,66,0.3)' },
     }) as any,
     purple: Platform.select({
-      ios: { shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
+      ios: { shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
       android: { elevation: 8 },
-      web: { boxShadow: '0 2px 16px rgba(139,92,246,0.3)' },
+      web: { boxShadow: '0 2px 16px rgba(124,58,237,0.3)' },
     }) as any,
     teal: Platform.select({
-      ios: { shadowColor: '#14B8A6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
+      ios: { shadowColor: '#0D9488', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 16 },
       android: { elevation: 8 },
-      web: { boxShadow: '0 2px 16px rgba(20,184,166,0.3)' },
+      web: { boxShadow: '0 2px 16px rgba(13,148,136,0.3)' },
     }) as any,
   },
-};
-
-export const haptics = {
-  light: Platform.OS === 'ios' ? 'light' : undefined,
-  medium: Platform.OS === 'ios' ? 'medium' : undefined,
-  heavy: Platform.OS === 'ios' ? 'heavy' : undefined,
-  success: Platform.OS === 'ios' ? 'success' : undefined,
-  warning: Platform.OS === 'ios' ? 'warning' : undefined,
-  error: Platform.OS === 'ios' ? 'error' : undefined,
-  selection: Platform.OS === 'ios' ? 'selection' : undefined,
 };

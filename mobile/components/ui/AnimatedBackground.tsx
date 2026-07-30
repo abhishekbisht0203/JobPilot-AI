@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, Dimensions, Easing } from 'react-native';
+import { Platform } from 'react-native';
 
 const { width: W, height: H } = Dimensions.get('window');
 const BLOB_COUNT = 4;
@@ -19,24 +20,24 @@ function Blob({ index, colors: gradientColors }: { index: number; colors: string
     const duration = 6000 + index * 2000;
     const animX = Animated.loop(
       Animated.sequence([
-        Animated.timing(x, { toValue: 1, duration, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-        Animated.timing(x, { toValue: 0, duration, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(x, { toValue: 1, duration, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(x, { toValue: 0, duration, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
       ])
     );
     const animY = Animated.loop(
       Animated.sequence([
-        Animated.timing(y, { toValue: 1, duration: duration * 1.2, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-        Animated.timing(y, { toValue: 0, duration: duration * 1.2, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(y, { toValue: 1, duration: duration * 1.2, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(y, { toValue: 0, duration: duration * 1.2, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
       ])
     );
     const animScale = Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.1, duration: duration * 0.6, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-        Animated.timing(scale, { toValue: 0.8, duration: duration * 0.6, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(scale, { toValue: 1.1, duration: duration * 0.6, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(scale, { toValue: 0.8, duration: duration * 0.6, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
       ])
     );
     const animRotate = Animated.loop(
-      Animated.timing(rotate, { toValue: 1, duration: duration * 1.5, useNativeDriver: true, easing: Easing.linear })
+      Animated.timing(rotate, { toValue: 1, duration: duration * 1.5, useNativeDriver: Platform.OS !== `web`, easing: Easing.linear })
     );
 
     animX.start();
@@ -97,3 +98,4 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
+

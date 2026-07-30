@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, borderRadius } from '../../lib/theme';
 
@@ -29,8 +30,8 @@ export function Badge({ label, variant = 'default', size = 'sm', icon, animated 
     if (animated) {
       const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 0.85, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+          Animated.timing(pulseAnim, { toValue: 0.85, duration: 1000, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: Platform.OS !== `web`, easing: Easing.inOut(Easing.sin) }),
         ])
       );
       loop.start();
@@ -73,3 +74,4 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
   star: { fontSize: 12, color: '#F59E0B', marginRight: 1 },
 });
+

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Text, TouchableOpacity, StyleSheet, ActivityIndicator, Animated } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -16,8 +17,8 @@ export default function GlowButton({ onPress, loading, disabled, children }: Glo
   return (
     <TouchableOpacity
       onPress={onPress}
-      onPressIn={() => Animated.spring(scale, { toValue: 0.97, stiffness: 400, damping: 20, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scale, { toValue: 1, stiffness: 400, damping: 20, useNativeDriver: true }).start()}
+      onPressIn={() => Animated.spring(scale, { toValue: 0.97, stiffness: 400, damping: 20, useNativeDriver: Platform.OS !== `web` }).start()}
+      onPressOut={() => Animated.spring(scale, { toValue: 1, stiffness: 400, damping: 20, useNativeDriver: Platform.OS !== `web` }).start()}
       disabled={loading || disabled}
       activeOpacity={1}
     >
@@ -60,3 +61,4 @@ const styles = StyleSheet.create({
     color: '#FFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.3,
   },
 });
+

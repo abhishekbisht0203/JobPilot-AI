@@ -45,20 +45,20 @@ export default function PremiumInput({
     Animated.timing(focusAnim, {
       toValue: focused ? 1 : 0,
       duration: 250, easing: Easing.bezier(0.16, 1, 0.3, 1),
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== `web`,
     }).start();
   }, [focused]);
 
   useEffect(() => {
     if (error) {
       Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -3, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 3, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: Platform.OS !== `web` }),
+        Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: Platform.OS !== `web` }),
+        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: Platform.OS !== `web` }),
+        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: Platform.OS !== `web` }),
+        Animated.timing(shakeAnim, { toValue: -3, duration: 60, useNativeDriver: Platform.OS !== `web` }),
+        Animated.timing(shakeAnim, { toValue: 3, duration: 60, useNativeDriver: Platform.OS !== `web` }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: Platform.OS !== `web` }),
       ]).start();
     }
   }, [error]);
@@ -146,3 +146,4 @@ const styles = StyleSheet.create({
   suffix: { marginLeft: 8, justifyContent: 'center', alignItems: 'center' },
   errorText: { color: '#EF4444', fontSize: 11, fontWeight: '500', marginTop: 4, marginLeft: 4 },
 });
+

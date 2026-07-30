@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, shadow } from '../../lib/theme';
 
@@ -80,7 +81,7 @@ export function MatchScoreRingSimple({ score, size = 56, animated = true }: Matc
 
   useEffect(() => {
     if (animated) {
-      Animated.spring(scaleAnim, { toValue: 1, stiffness: 100, damping: 15, useNativeDriver: true }).start();
+      Animated.spring(scaleAnim, { toValue: 1, stiffness: 100, damping: 15, useNativeDriver: Platform.OS !== `web` }).start();
     } else {
       scaleAnim.setValue(1);
     }
@@ -120,3 +121,4 @@ const styles = StyleSheet.create({
   },
   simpleInner: { justifyContent: 'center', alignItems: 'center' },
 });
+

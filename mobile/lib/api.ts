@@ -181,4 +181,54 @@ export const analyticsApi = {
   getUsage: () => api.get('/analytics/usage'),
 };
 
+export const companiesApi = {
+  list: (params?: { page?: number; per_page?: number; search?: string }) =>
+    api.get('/jobs/companies', { params }),
+  get: (name: string) => api.get(`/jobs/companies/${encodeURIComponent(name)}`),
+};
+
+export const notificationsApi = {
+  list: (params?: { page?: number }) =>
+    api.get('/notifications', { params }),
+  markRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllRead: () => api.post('/notifications/read-all'),
+};
+
+export const messagesApi = {
+  list: (params?: { page?: number }) =>
+    api.get('/messages', { params }),
+  send: (data: { recipient_id: string; content: string }) =>
+    api.post('/messages', data),
+};
+
+export const contactApi = {
+  submit: (data: { name: string; email: string; subject: string; message: string; type?: string }) =>
+    api.post('/contact', data),
+  listTickets: () => api.get('/contact/tickets'),
+};
+
+export const resourcesApi = {
+  list: (params?: { type?: string; page?: number }) =>
+    api.get('/resources', { params }),
+  get: (id: string) => api.get(`/resources/${id}`),
+};
+
+export const subscriptionsApi = {
+  getPlans: () => api.get('/subscriptions/plans'),
+  subscribe: (planId: string, interval: 'monthly' | 'yearly') =>
+    api.post('/subscriptions', { plan_id: planId, interval }),
+  cancel: () => api.post('/subscriptions/cancel'),
+  getCurrent: () => api.get('/subscriptions/current'),
+};
+
+export const settingsApi = {
+  updateNotifications: (data: Record<string, boolean>) =>
+    api.patch('/users/notifications', data),
+  updatePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/users/change-password', { current_password: currentPassword, new_password: newPassword }),
+  updatePrivacy: (data: Record<string, boolean>) =>
+    api.patch('/users/privacy', data),
+  deleteAccount: () => api.delete('/users/account'),
+};
+
 export default api;

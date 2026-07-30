@@ -6,12 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
-  Dimensions,
+  useWindowDimensions,
   Animated as RNAnimated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useRouter, usePathname } from 'expo-router';
 import {
   useSharedValue,
@@ -62,17 +61,17 @@ import {
   AtSign,
   GitFork,
   Share2,
+  ShieldCheck,
 } from 'lucide-react-native';
 import { colors, spacing, borderRadius, typography, shadow } from '../../lib/theme';
 import { useAuthStore, useDrawerStore, useThemeStore } from '../../store';
 import { ThemeMode } from '../../types';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 400);
-
 export default function Drawer() {
   const { isOpen, close } = useDrawerStore();
   const insets = useSafeAreaInsets();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, 400);
   const translateX = useSharedValue(-DRAWER_WIDTH);
   const backdropOpacity = useSharedValue(0);
 
@@ -108,14 +107,14 @@ export default function Drawer() {
         />
       </Animated.View>
 
-      <Animated.View style={[styles.drawer, { paddingTop: insets.top }, drawerStyle]}>
-        <DrawerContent close={close} insets={insets} />
+      <Animated.View style={[styles.drawer, { width: DRAWER_WIDTH, paddingTop: insets.top }, drawerStyle]}>
+        <DrawerContent close={close} insets={insets} drawerWidth={DRAWER_WIDTH} />
       </Animated.View>
     </View>
   );
 }
 
-function DrawerContent({ close, insets }: { close: () => void; insets: any }) {
+function DrawerContent({ close, insets, drawerWidth }: { close: () => void; insets: any; drawerWidth: number }) {
   const { user, isAuthenticated, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -142,7 +141,7 @@ function DrawerContent({ close, insets }: { close: () => void; insets: any }) {
         <NavSection pathname={pathname} handleNav={handleNav} />
         <CareerToolsSection handleNav={handleNav} />
         <ResourcesSection handleNav={handleNav} />
-        <QuickActionsSection handleNav={handleNav} />
+        <QuickActionsSection handleNav={handleNav} drawerWidth={drawerWidth} />
         <ThemeSection />
         <DrawerFooter handleNav={handleNav} handleLogout={handleLogout} isAuthenticated={isAuthenticated} />
       </ScrollView>
@@ -315,11 +314,12 @@ interface NavItem {
 
 const MAIN_NAV: NavItem[] = [
   { icon: <House size={20} color="#3B82F6" />, label: 'Home', desc: 'Back to dashboard', route: '/(tabs)' },
-  { icon: <Briefcase size={20} color="#8B5CF6" />, label: 'Find Jobs', desc: 'Browse thousands of jobs', route: '/(tabs)' },
-  { icon: <Building2 size={20} color="#10B981" />, label: 'Browse Companies', desc: 'Explore top employers', route: '/(tabs)' },
-  { icon: <CreditCard size={20} color="#F59E0B" />, label: 'Pricing', desc: 'Choose your plan', route: '/(tabs)/profile' },
-  { icon: <Phone size={20} color="#EC4899" />, label: 'Contact', desc: 'Get in touch', route: '/(tabs)/profile' },
-  { icon: <Info size={20} color="#06B6D4" />, label: 'About', desc: 'Learn about JobPilot AI', route: '/(tabs)/profile' },
+  { icon: <Briefcase size={20} color="#8B5CF6" />, label: 'Find Jobs', desc: 'Browse thousands of jobs', route: '/(tabs)/find-jobs' },
+  { icon: <Building2 size={20} color="#10B981" />, label: 'Browse Companies', desc: 'Explore top employers', route: '/(tabs)/browse-companies' },
+  { icon: <CreditCard size={20} color="#F59E0B" />, label: 'Pricing', desc: 'Choose your plan', route: '/(tabs)/pricing' },
+  { icon: <Phone size={20} color="#EC4899" />, label: 'Contact', desc: 'Get in touch', route: '/(tabs)/contact' },
+  { icon: <Info size={20} color="#06B6D4" />, label: 'About', desc: 'Learn about JobPilot AI', route: '/(tabs)/about' },
+  { icon: <ShieldCheck size={20} color="#EF4444" />, label: 'Admin', desc: 'Manage platform', route: '/(tabs)/admin' },
 ];
 
 function NavSection({ pathname, handleNav }: { pathname: string; handleNav: (route: string) => void }) {
@@ -364,27 +364,32 @@ interface ToolItem {
 }
 
 const TOOLS: ToolItem[] = [
-  { icon: <Sparkles size={18} color="#FFF" />, label: 'AI Resume Builder', desc: 'Create ATS-friendly resumes', route: '/(tabs)/resume', color: '#3B82F6' },
+  { icon: <Sparkles size={18} color="#FFF" />, label: 'AI Resume Builder', desc: 'Create ATS-friendly resumes', route: '/generate/resume-version', color: '#3B82F6' },
   { icon: <FileText size={18} color="#FFF" />, label: 'Cover Letter', desc: 'Generate personalized cover letters', route: '/generate/cover-letter', color: '#8B5CF6' },
+  { icon: <ClipboardCheck size={18} color="#FFF" />, label: 'Resume Checker', desc: 'Check ATS score', route: '/(tabs)/career-tools/resume-checker', color: '#06B6D4' },
   { icon: <Mic size={18} color="#FFF" />, label: 'Mock Interview', desc: 'Practice with AI', route: '/ai/mock-interview', color: '#10B981' },
-  { icon: <DollarSign size={18} color="#FFF" />, label: 'Salary Explorer', desc: 'Compare salaries worldwide', route: '/(tabs)', color: '#F59E0B' },
-  { icon: <MapPin size={18} color="#FFF" />, label: 'Career Roadmap', desc: 'Learn your next skills', route: '/ai/skill-gap', color: '#EC4899' },
-  { icon: <ClipboardCheck size={18} color="#FFF" />, label: 'Resume Checker', desc: 'Improve ATS score', route: '/(tabs)/resume', color: '#06B6D4' },
+  { icon: <DollarSign size={18} color="#FFF" />, label: 'Salary Explorer', desc: 'Compare salaries worldwide', route: '/(tabs)/career-tools/salary-explorer', color: '#F59E0B' },
+  { icon: <MapPin size={18} color="#FFF" />, label: 'Career Roadmap', desc: 'Plan your growth', route: '/(tabs)/career-tools/career-roadmap', color: '#EC4899' },
+  { icon: <BookOpen size={18} color="#FFF" />, label: 'Interview Prep', desc: 'Practice questions', route: '/(tabs)/career-tools/interview-prep', color: '#06B6D4' },
+  { icon: <Shield size={18} color="#FFF" />, label: 'ATS Score', desc: 'Analyze your resume', route: '/(tabs)/career-tools/ats-score', color: '#F59E0B' },
 ];
 
 interface ResourceItem {
   icon: React.ReactNode;
   label: string;
   desc: string;
+  route?: string;
   color: string;
 }
 
 const RESOURCES: ResourceItem[] = [
-  { icon: <BookOpen size={18} color="#FFF" />, label: 'Blogs', desc: 'Career advice & insights', color: '#3B82F6' },
-  { icon: <Lightbulb size={18} color="#FFF" />, label: 'Career Guides', desc: 'Step-by-step guidance', color: '#8B5CF6' },
-  { icon: <CircleQuestionMark size={18} color="#FFF" />, label: 'Interview Questions', desc: 'Common questions & answers', color: '#10B981' },
-  { icon: <FileText size={18} color="#FFF" />, label: 'Resume Templates', desc: 'Professional templates', color: '#F59E0B' },
-  { icon: <Shield size={18} color="#FFF" />, label: 'Help Center', desc: 'Get support', color: '#EC4899' },
+  { icon: <BookOpen size={18} color="#FFF" />, label: 'Blogs', desc: 'Career advice & insights', route: '/(tabs)/resources/blogs', color: '#3B82F6' },
+  { icon: <Lightbulb size={18} color="#FFF" />, label: 'Career Guides', desc: 'Step-by-step guidance', route: '/(tabs)/resources/career-guides', color: '#8B5CF6' },
+  { icon: <CircleQuestionMark size={18} color="#FFF" />, label: 'Interview Questions', desc: 'Common Q&A', route: '/(tabs)/resources/interview-questions', color: '#10B981' },
+  { icon: <FileText size={18} color="#FFF" />, label: 'Resume Templates', desc: 'Professional templates', route: '/(tabs)/resources/resume-templates', color: '#F59E0B' },
+  { icon: <Shield size={18} color="#FFF" />, label: 'Learning Resources', desc: 'Courses & tutorials', route: '/(tabs)/resources/learning-resources', color: '#6366F1' },
+  { icon: <CircleQuestionMark size={18} color="#FFF" />, label: 'FAQ', desc: 'Frequently asked questions', route: '/(tabs)/resources/faq', color: '#14B8A6' },
+  { icon: <Lightbulb size={18} color="#FFF" />, label: 'Help Center', desc: 'Get support', route: '/(tabs)/resources/help-center', color: '#EC4899' },
 ];
 
 function AccordionSection({
@@ -502,7 +507,7 @@ const QUICK_ACTIONS = [
   { icon: <Eye size={18} color="#8B5CF6" />, label: 'Recently Viewed', desc: 'Continue where you left', bgColor: '#EDE9FE' },
 ];
 
-function QuickActionsSection({ handleNav }: { handleNav: (route: string) => void }) {
+function QuickActionsSection({ handleNav, drawerWidth }: { handleNav: (route: string) => void; drawerWidth: number }) {
   return (
     <Animated.View entering={FadeInDown.delay(440).springify()} style={styles.sectionContainer}>
       <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
@@ -510,12 +515,14 @@ function QuickActionsSection({ handleNav }: { handleNav: (route: string) => void
         {QUICK_ACTIONS.map((item, i) => (
           <TouchableOpacity
             key={i}
-            style={styles.quickActionCard}
+            style={[styles.quickActionCard, { width: (drawerWidth - spacing.md * 2 - spacing.sm) / 2 }]}
             onPress={() => {
-              if (item.label === 'Saved Jobs') handleNav('/(tabs)');
-              else if (item.label === 'Applied Jobs') handleNav('/(tabs)/applications');
-              else if (item.label === 'Notifications') handleNav('/(tabs)/profile');
-              else handleNav('/(tabs)');
+              if (item.label === 'Saved Jobs') handleNav('/(tabs)/quick-actions/saved-jobs');
+              else if (item.label === 'Applied Jobs') handleNav('/(tabs)/quick-actions/applied-jobs');
+              else if (item.label === 'Notifications') handleNav('/(tabs)/quick-actions/notifications');
+              else if (item.label === 'Messages') handleNav('/(tabs)/quick-actions/messages');
+              else if (item.label === 'Recently Viewed') handleNav('/(tabs)/quick-actions/recently-viewed');
+              else handleNav('/(tabs)/quick-actions');
             }}
             activeOpacity={0.7}
             accessibilityLabel={item.label}
@@ -615,16 +622,24 @@ function DrawerFooter({
   return (
     <Animated.View entering={FadeInDown.delay(600).springify()} style={styles.footer}>
       <View style={styles.footerLinks}>
-        <TouchableOpacity onPress={() => handleNav('/(tabs)/profile')} accessibilityRole="button">
-          <Text style={styles.footerLink}>Privacy Policy</Text>
+        <TouchableOpacity onPress={() => handleNav('/(tabs)/settings')} accessibilityRole="button">
+          <Text style={styles.footerLink}>Settings</Text>
         </TouchableOpacity>
         <Text style={styles.footerDot}>•</Text>
-        <TouchableOpacity onPress={() => handleNav('/(tabs)/profile')} accessibilityRole="button">
+        <TouchableOpacity onPress={() => handleNav('/(tabs)/privacy')} accessibilityRole="button">
+          <Text style={styles.footerLink}>Privacy</Text>
+        </TouchableOpacity>
+        <Text style={styles.footerDot}>•</Text>
+        <TouchableOpacity onPress={() => handleNav('/(tabs)/terms')} accessibilityRole="button">
           <Text style={styles.footerLink}>Terms</Text>
         </TouchableOpacity>
         <Text style={styles.footerDot}>•</Text>
-        <TouchableOpacity onPress={() => handleNav('/(tabs)/profile')} accessibilityRole="button">
-          <Text style={styles.footerLink}>Version 1.0</Text>
+        <TouchableOpacity onPress={() => handleNav('/(tabs)/contact')} accessibilityRole="button">
+          <Text style={styles.footerLink}>Support</Text>
+        </TouchableOpacity>
+        <Text style={styles.footerDot}>•</Text>
+        <TouchableOpacity onPress={() => handleNav('/(tabs)/about')} accessibilityRole="button">
+          <Text style={styles.footerLink}>v1.0</Text>
         </TouchableOpacity>
       </View>
 
@@ -665,7 +680,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    width: DRAWER_WIDTH,
     backgroundColor: colors.surface,
     zIndex: 101,
     ...shadow.xl,
@@ -999,7 +1013,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   quickActionCard: {
-    width: (DRAWER_WIDTH - spacing.md * 2 - spacing.sm) / 2,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.surface,
     padding: spacing.sm,

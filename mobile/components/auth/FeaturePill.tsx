@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface FeaturePillProps {
@@ -18,13 +19,13 @@ export default function FeaturePill({ icon, label, index = 0 }: FeaturePillProps
   useEffect(() => {
     const baseDelay = 800 + index * 120;
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 400, delay: baseDelay, useNativeDriver: true }),
-      Animated.timing(scale, { toValue: 1, duration: 400, delay: baseDelay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 400, delay: baseDelay, useNativeDriver: Platform.OS !== `web` }),
+      Animated.timing(scale, { toValue: 1, duration: 400, delay: baseDelay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: Platform.OS !== `web` }),
     ]).start();
     Animated.loop(
       Animated.sequence([
-        Animated.timing(float, { toValue: FLOATS[index % FLOATS.length], duration: 3000 + index * 400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(float, { toValue: 0, duration: 3000 + index * 400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(float, { toValue: FLOATS[index % FLOATS.length], duration: 3000 + index * 400, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
+        Animated.timing(float, { toValue: 0, duration: 3000 + index * 400, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
       ]),
       { iterations: -1 },
     ).start();
@@ -54,3 +55,4 @@ const styles = StyleSheet.create({
     fontSize: 12, fontWeight: '600', color: '#4F7CFF', letterSpacing: 0.2,
   },
 });
+

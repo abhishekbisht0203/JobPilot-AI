@@ -8,6 +8,7 @@ import {
   Animated,
   ViewStyle,
 } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../lib/theme';
 
@@ -171,3 +172,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+

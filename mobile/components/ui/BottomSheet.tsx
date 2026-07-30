@@ -8,6 +8,7 @@ import {
   Dimensions,
   PanResponder,
 } from 'react-native';
+import { Platform } from 'react-native';
 import { colors, borderRadius, spacing } from '../../lib/theme';
 
 interface BottomSheetProps {
@@ -27,13 +28,13 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
         toValue: 0,
         damping: 25,
         stiffness: 200,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== `web`,
       }).start();
     } else {
       Animated.timing(translateY, {
         toValue: SCREEN_HEIGHT,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== `web`,
       }).start();
     }
   }, [visible]);
@@ -54,7 +55,7 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
           Animated.spring(translateY, {
             toValue: 0,
             damping: 25,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== `web`,
           }).start();
         }
       },
@@ -109,3 +110,4 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 });
+

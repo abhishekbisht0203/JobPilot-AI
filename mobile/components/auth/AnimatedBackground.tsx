@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
+import { Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -25,12 +26,12 @@ function Blob({ blob }: { blob: typeof BLOBS[0] }) {
     Animated.loop(
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(tx, { toValue: blob.moveX, duration: blob.dur, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(ty, { toValue: blob.moveY, duration: blob.dur * 1.2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(tx, { toValue: blob.moveX, duration: blob.dur, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
+          Animated.timing(ty, { toValue: blob.moveY, duration: blob.dur * 1.2, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
         ]),
         Animated.parallel([
-          Animated.timing(tx, { toValue: 0, duration: blob.dur, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(ty, { toValue: 0, duration: blob.dur * 1.2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(tx, { toValue: 0, duration: blob.dur, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
+          Animated.timing(ty, { toValue: 0, duration: blob.dur * 1.2, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
         ]),
       ]),
       { iterations: -1 },
@@ -50,15 +51,15 @@ function Particle({ p }: { p: typeof PARTICLES[0] }) {
   useEffect(() => {
     Animated.loop(
       Animated.parallel([
-        Animated.timing(y, { toValue: -20, duration: p.dur, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(y, { toValue: -20, duration: p.dur, easing: Easing.linear, useNativeDriver: Platform.OS !== `web` }),
         Animated.sequence([
-          Animated.timing(x, { toValue: p.x + p.xDrift, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-          Animated.timing(x, { toValue: p.x, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(x, { toValue: p.x + p.xDrift, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
+          Animated.timing(x, { toValue: p.x, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
         ]),
         Animated.loop(
           Animated.sequence([
-            Animated.timing(opacity, { toValue: 0.6, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(opacity, { toValue: 0.3, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0.6, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
+            Animated.timing(opacity, { toValue: 0.3, duration: p.dur * 0.5, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== `web` }),
           ]),
           { iterations: -1 },
         ),
@@ -93,3 +94,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#8B5CF6', opacity: 0.025,
   },
 });
+

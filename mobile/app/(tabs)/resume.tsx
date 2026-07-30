@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-  Animated, Easing,
+  Animated, Easing, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,8 +31,8 @@ export default function ResumeScreen() {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(headerOpacity, { toValue: 1, duration: 500, useNativeDriver: true, easing: Easing.bezier(0.16, 1, 0.3, 1) }),
-      Animated.timing(headerSlide, { toValue: 0, duration: 500, useNativeDriver: true, easing: Easing.bezier(0.16, 1, 0.3, 1) }),
+      Animated.timing(headerOpacity, { toValue: 1, duration: 500, useNativeDriver: Platform.OS !== 'web', easing: Easing.bezier(0.16, 1, 0.3, 1) }),
+      Animated.timing(headerSlide, { toValue: 0, duration: 500, useNativeDriver: Platform.OS !== 'web', easing: Easing.bezier(0.16, 1, 0.3, 1) }),
     ]).start();
   }, []);
 
@@ -145,8 +145,8 @@ export default function ResumeScreen() {
         {resumes.map((resume, index) => {
           const { opacity, translateY } = useSlideUp(30 + index * 20);
           const itemScale = useRef(new Animated.Value(1)).current;
-          const itemPressIn = () => Animated.spring(itemScale, { toValue: 0.97, useNativeDriver: true }).start();
-          const itemPressOut = () => Animated.spring(itemScale, { toValue: 1, useNativeDriver: true }).start();
+          const itemPressIn = () => Animated.spring(itemScale, { toValue: 0.97, useNativeDriver: Platform.OS !== 'web' }).start();
+          const itemPressOut = () => Animated.spring(itemScale, { toValue: 1, useNativeDriver: Platform.OS !== 'web' }).start();
 
           return (
             <Animated.View key={resume.id} style={{ opacity, transform: [{ translateY }] }}>

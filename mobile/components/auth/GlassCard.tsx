@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
+import { Platform } from 'react-native';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -14,9 +15,9 @@ export default function GlassCard({ children, delay = 0, style }: GlassCardProps
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 600, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 600, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
-      Animated.timing(scale, { toValue: 1, duration: 600, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 600, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: Platform.OS !== `web` }),
+      Animated.timing(translateY, { toValue: 0, duration: 600, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: Platform.OS !== `web` }),
+      Animated.timing(scale, { toValue: 1, duration: 600, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: Platform.OS !== `web` }),
     ]).start();
   }, []);
 
@@ -50,3 +51,4 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.8)',
   },
 });
+

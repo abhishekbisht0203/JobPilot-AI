@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, Text, StyleSheet, Easing, ActivityIndicator } from 'react-native';
+import { Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../../lib/theme';
 
@@ -14,7 +15,7 @@ export function Loader({ fullScreen = false, message, size = 'large' }: LoaderPr
 
   useEffect(() => {
     const animation = Animated.loop(
-      Animated.timing(spinAnim, { toValue: 1, duration: 1000, easing: Easing.linear, useNativeDriver: true })
+      Animated.timing(spinAnim, { toValue: 1, duration: 1000, easing: Easing.linear, useNativeDriver: Platform.OS !== `web` })
     );
     animation.start();
     return () => animation.stop();
@@ -49,3 +50,4 @@ const styles = StyleSheet.create({
   spinnerInner: { justifyContent: 'center', alignItems: 'center' },
   message: { color: colors.textSecondary, fontSize: 14, textAlign: 'center' },
 });
+

@@ -23,14 +23,14 @@ export function Card({
 
   const pressIn = useCallback(() => {
     Animated.parallel([
-      Animated.spring(scale, { toValue: 0.97, stiffness: 300, damping: 20, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 0.97, stiffness: 300, damping: 20, useNativeDriver: Platform.OS !== 'web' }),
       Animated.timing(glow, { toValue: 1, duration: 150, useNativeDriver: false }),
     ]).start();
   }, []);
 
   const pressOut = useCallback(() => {
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, stiffness: 300, damping: 20, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, stiffness: 300, damping: 20, useNativeDriver: Platform.OS !== 'web' }),
       Animated.timing(glow, { toValue: 0, duration: 200, useNativeDriver: false }),
     ]).start();
   }, []);

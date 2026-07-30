@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { Platform } from 'react-native';
 
 interface BenefitCardProps {
   icon: string;
@@ -14,8 +15,8 @@ export default function BenefitCard({ icon, title, description, delay = 0 }: Ben
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 500, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 500, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 500, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: Platform.OS !== `web` }),
+      Animated.timing(translateY, { toValue: 0, duration: 500, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: Platform.OS !== `web` }),
     ]).start();
   }, []);
 
@@ -41,3 +42,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 12, fontWeight: '700', color: '#111827', marginBottom: 3, textAlign: 'center' },
   desc: { fontSize: 10, color: '#6B7280', textAlign: 'center', lineHeight: 14 },
 });
+

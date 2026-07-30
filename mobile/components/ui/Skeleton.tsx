@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet, ViewStyle, Easing } from 'react-native';
+import { View, Animated, StyleSheet, ViewStyle, Easing, Platform } from 'react-native';
 import { colors, borderRadius, shadow } from '../../lib/theme';
 
 interface SkeletonProps {
@@ -13,10 +13,11 @@ export function Skeleton({ width = '100%', height = 20, style, borderRadiusValue
   const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    const useNative = Platform.OS !== 'web';
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(shimmer, { toValue: 1, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-        Animated.timing(shimmer, { toValue: 0, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(shimmer, { toValue: 1, duration: 1000, useNativeDriver: useNative, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(shimmer, { toValue: 0, duration: 1000, useNativeDriver: useNative, easing: Easing.inOut(Easing.sin) }),
       ])
     );
     animation.start();

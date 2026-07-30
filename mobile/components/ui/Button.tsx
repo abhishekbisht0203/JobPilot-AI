@@ -31,11 +31,11 @@ export function Button({
   const successAnim = useRef(new Animated.Value(0)).current;
 
   const pressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.96, stiffness: 400, damping: 25, useNativeDriver: true }).start();
+    Animated.spring(scale, { toValue: 0.96, stiffness: 400, damping: 25, useNativeDriver: Platform.OS !== `web` }).start();
   }, []);
 
   const pressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, stiffness: 400, damping: 25, useNativeDriver: true }).start();
+    Animated.spring(scale, { toValue: 1, stiffness: 400, damping: 25, useNativeDriver: Platform.OS !== `web` }).start();
   }, []);
 
   const showGradient = gradient && !disabled && (variant === 'primary' || variant === 'success' || variant === 'danger');
@@ -154,3 +154,4 @@ const variantText = StyleSheet.create({
   outline: { color: colors.primary },
   ghost: { color: colors.primary },
 });
+

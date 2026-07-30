@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
@@ -22,14 +22,14 @@ export function EmptyState({ icon, title, message, actionLabel, onAction, second
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scaleAnim, { toValue: 1, stiffness: 120, damping: 12, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true, easing: Easing.bezier(0.16, 1, 0.3, 1) }),
+      Animated.spring(scaleAnim, { toValue: 1, stiffness: 120, damping: 12, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: Platform.OS !== 'web', easing: Easing.bezier(0.16, 1, 0.3, 1) }),
     ]).start();
 
     const floatLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(iconFloat, { toValue: 1, duration: 2000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
-        Animated.timing(iconFloat, { toValue: 0, duration: 2000, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(iconFloat, { toValue: 1, duration: 2000, useNativeDriver: Platform.OS !== 'web', easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(iconFloat, { toValue: 0, duration: 2000, useNativeDriver: Platform.OS !== 'web', easing: Easing.inOut(Easing.sin) }),
       ])
     );
     floatLoop.start();

@@ -1,16 +1,18 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { Animated, Easing } from 'react-native';
+import { Animated, Easing, Platform } from 'react-native';
 import {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
   withRepeat, withSequence, withDelay, Easing as ReEasing,
   interpolate, Extrapolation, SharedValue,
 } from 'react-native-reanimated';
 
+const USE_NATIVE = Platform.OS !== 'web';
+
 export function useFadeIn(delay = 0, duration = 500) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(opacity, {
-      toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true,
+      toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: USE_NATIVE,
     }).start();
   }, []);
   return opacity;
@@ -21,8 +23,8 @@ export function useSlideUp(delay = 0, distance = 24, duration = 500) {
   const translateY = useRef(new Animated.Value(distance)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: USE_NATIVE }),
+      Animated.timing(translateY, { toValue: 0, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: USE_NATIVE }),
     ]).start();
   }, []);
   return { opacity, translateY };
@@ -33,8 +35,8 @@ export function useScaleIn(delay = 0, duration = 500) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(scale, { toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: USE_NATIVE }),
+      Animated.timing(opacity, { toValue: 1, duration, delay, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: USE_NATIVE }),
     ]).start();
   }, []);
   return { scale, opacity };
@@ -46,8 +48,8 @@ export function useStaggerAnimation(count: number, baseDelay = 80) {
     const translateY = useRef(new Animated.Value(20)).current;
     useEffect(() => {
       Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 400, delay: baseDelay * i, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 0, duration: 400, delay: baseDelay * i, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 400, delay: baseDelay * i, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: USE_NATIVE }),
+        Animated.timing(translateY, { toValue: 0, duration: 400, delay: baseDelay * i, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: USE_NATIVE }),
       ]).start();
     }, []);
     return { opacity, translateY };
@@ -59,8 +61,8 @@ export function usePulse(interval = 2000) {
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: interval / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: interval / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 1, duration: interval / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: USE_NATIVE }),
+        Animated.timing(anim, { toValue: 0, duration: interval / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: USE_NATIVE }),
       ]),
     );
     loop.start();
@@ -74,8 +76,8 @@ export function useFloat(amplitude = 4, duration = 3000) {
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: duration / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: duration / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 1, duration: duration / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: USE_NATIVE }),
+        Animated.timing(anim, { toValue: 0, duration: duration / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: USE_NATIVE }),
       ]),
     );
     loop.start();
@@ -87,10 +89,10 @@ export function useFloat(amplitude = 4, duration = 3000) {
 export function useSpringPress() {
   const scale = useRef(new Animated.Value(1)).current;
   const pressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, stiffness: 300, damping: 12 }).start();
+    Animated.spring(scale, { toValue: 0.96, useNativeDriver: USE_NATIVE, stiffness: 300, damping: 12 }).start();
   }, []);
   const pressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, stiffness: 200, damping: 15 }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: USE_NATIVE, stiffness: 200, damping: 15 }).start();
   }, []);
   return { scale, pressIn, pressOut };
 }
@@ -119,8 +121,8 @@ export function useShimmer() {
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: USE_NATIVE }),
+        Animated.timing(anim, { toValue: 0, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: USE_NATIVE }),
       ]),
     );
     loop.start();
