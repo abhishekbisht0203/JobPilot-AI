@@ -155,6 +155,8 @@ Key variables (see `.env.example` for the full list):
 
 ---
 
+develop by- Abhishek and Darshan
+
 ## License
 
 MIT
