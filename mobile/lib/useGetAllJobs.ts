@@ -7,6 +7,7 @@ interface UseGetAllJobsOptions {
   page?: number;
   perPage?: number;
   search?: string;
+  keyword?: string;
   platform?: string;
 }
 
@@ -24,7 +25,7 @@ interface UseGetAllJobsResult {
 }
 
 export function useGetAllJobs(options: UseGetAllJobsOptions = {}): UseGetAllJobsResult {
-  const { page: initialPage = 1, perPage = 20, search, platform } = options;
+  const { page: initialPage = 1, perPage = 20, search, keyword } = options;
   const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,13 +34,13 @@ export function useGetAllJobs(options: UseGetAllJobsOptions = {}): UseGetAllJobs
   const [totalPages, setTotalPages] = useState(0);
   const setJobs = useJobStore((s) => s.setJobs);
   const addJobs = useJobStore((s) => s.addJobs);
-  const jobs = useJobStore((s) => s.jobs);
+  const jobs = useJobStore((s) => s.allJobs);
 
   const fetchJobs = useCallback(async (pageNum: number, append: boolean = false) => {
     try {
       if (!append) setLoading(true);
       setError(null);
-      const res = await jobsApi.list({ page: pageNum, per_page: perPage, search, platform });
+      const res = await jobsApi.list({ page: pageNum, per_page: perPage, keyword: keyword || search });
       const data = res.data;
       const items: Job[] = data.data || data.jobs || data.items || data || [];
       const totalCount = data.total || items.length;
@@ -58,7 +59,7 @@ export function useGetAllJobs(options: UseGetAllJobsOptions = {}): UseGetAllJobs
       setLoading(false);
       setRefreshing(false);
     }
-  }, [perPage, search, platform, setJobs, addJobs]);
+  }, [perPage, search, keyword, setJobs, addJobs]);
 
   useEffect(() => {
     fetchJobs(page, page > 1);

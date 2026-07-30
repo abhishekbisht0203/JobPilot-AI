@@ -61,7 +61,7 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      const res = await authApi.register(name, email, password);
+      const res = await authApi.register(name, email, '', password);
       setAuth(res.data.user, res.data.token);
       router.replace('/(tabs)');
     } catch (err: any) {

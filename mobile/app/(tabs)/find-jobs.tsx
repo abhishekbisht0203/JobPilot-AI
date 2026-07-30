@@ -282,6 +282,7 @@ export default function FindJobsScreen() {
   const [salaryMax, setSalaryMax] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const { savedJobs, toggleSaveJob } = useJobStore();
   const insets = useSafeAreaInsets();
@@ -319,8 +320,9 @@ export default function FindJobsScreen() {
       setTotal(totalCount);
       setHasMore(pageNum < totalPages);
       setPage(pageNum);
-    } catch (err) {
-      console.error('Failed to fetch jobs:', err);
+      setFetchError(null);
+    } catch {
+      setFetchError('Unable to load jobs. Check your connection and try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -554,6 +556,17 @@ export default function FindJobsScreen() {
 
   const renderEmpty = useCallback(() => {
     if (loading) return null;
+    if (fetchError) {
+      return (
+        <EmptyState
+          icon="cloud-offline-outline"
+          title="Connection Error"
+          message={fetchError}
+          actionLabel="Retry"
+          onAction={() => fetchJobs(1, false)}
+        />
+      );
+    }
     const hasFilters = searchQuery || activePlatform || locationFilter || salaryMin || salaryMax || experienceLevel;
     return (
       <EmptyState
@@ -566,7 +579,7 @@ export default function FindJobsScreen() {
         onAction={hasFilters ? () => { setSearchQuery(''); setActivePlatform(''); setLocationFilter(''); setSalaryMin(''); setSalaryMax(''); setExperienceLevel(''); } : undefined}
       />
     );
-  }, [loading, searchQuery, activePlatform, locationFilter, salaryMin, salaryMax, experienceLevel]);
+  }, [loading, fetchError, searchQuery, activePlatform, locationFilter, salaryMin, salaryMax, experienceLevel]);
 
   const renderFooter = useCallback(() => {
     if (!loadingMore) return null;

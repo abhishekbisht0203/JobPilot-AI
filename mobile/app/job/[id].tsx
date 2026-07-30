@@ -18,11 +18,13 @@ export default function JobDetailScreen() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!id) return;
-    jobsApi.get(id).then((res) => setJob(res.data.data || res.data)).catch(console.error).finally(() => setLoading(false));
+    setFetchError(null);
+    jobsApi.get(id).then((res) => setJob(res.data.data || res.data)).catch(() => setFetchError('Unable to load job details.')).finally(() => setLoading(false));
   }, [id]);
 
   const handleApply = async () => {
@@ -36,7 +38,18 @@ export default function JobDetailScreen() {
     } finally { setApplying(false); }
   };
 
-  if (loading || !job) return <Loader fullScreen />;
+  if (loading) return <Loader fullScreen />;
+  if (fetchError || !job) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="cloud-offline-outline" size={48} color={colors.textMuted} />
+        <Text style={{ color: colors.text, fontSize: 16, marginTop: 16 }}>{fetchError || 'Job not found'}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

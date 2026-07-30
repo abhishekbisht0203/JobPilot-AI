@@ -63,6 +63,7 @@ export default function ApplicationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<StatusTab>('all');
   const [stats, setStats] = useState<Record<string, number>>({});
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const { horizontalPadding } = useResponsive();
   const insets = useSafeAreaInsets();
 
@@ -74,8 +75,9 @@ export default function ApplicationsScreen() {
       ]);
       setApplications(appsRes.data.data || []);
       setStats(statsRes.data.data || {});
-    } catch (err) {
-      console.error('Failed to fetch applications:', err);
+      setFetchError(null);
+    } catch {
+      setFetchError('Unable to load applications. Check your connection.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -213,7 +215,15 @@ export default function ApplicationsScreen() {
           </>
         }
         ListEmptyComponent={
-          loading ? <Loader /> : (
+          loading ? <Loader /> : fetchError ? (
+            <EmptyState
+              icon="cloud-offline-outline"
+              title="Connection Error"
+              message={fetchError}
+              actionLabel="Retry"
+              onAction={() => { setLoading(true); fetchData(); }}
+            />
+          ) : (
             <EmptyState
               icon="briefcase-outline"
               title="No applications yet"

@@ -25,6 +25,7 @@ export default function MockInterviewScreen() {
   const [scores, setScores] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
   const [overallScore, setOverallScore] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const startInterview = async () => {
     if (!jobDesc.trim()) return;
@@ -32,8 +33,9 @@ export default function MockInterviewScreen() {
     try {
       const res = await aiApi.mockInterview({ job_description: jobDesc });
       setQuestions(res.data.data?.questions || res.data.questions || []);
-    } catch (err) {
-      console.error(err);
+      setError(null);
+    } catch {
+      setError('Failed to generate questions. Check your connection.');
     } finally { setLoading(false); }
   };
 
@@ -111,6 +113,7 @@ export default function MockInterviewScreen() {
                   textAlignVertical="top"
                 />
               </View>
+              {error && <Text style={styles.errorText}>{error}</Text>}
               <Button title="Start Interview" onPress={startInterview} variant="primary" fullWidth />
             </GlassCard>
           </Animated.View>
@@ -175,5 +178,6 @@ const styles = StyleSheet.create({
   scoreNumber: { fontSize: 48, fontWeight: '800', color: colors.primary },
   scoreLabel: { fontSize: 14, color: colors.textSecondary },
   scoreBarBg: { width: '100%', height: 8, backgroundColor: colors.borderLight, borderRadius: 4, overflow: 'hidden' },
+  errorText: { color: colors.error, fontSize: 13, textAlign: 'center' },
   scoreBarFill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
 });

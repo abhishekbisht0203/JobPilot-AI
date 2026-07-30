@@ -26,6 +26,7 @@ export default function CoverLetterScreen() {
   const [jobDescription, setJobDescription] = useState(params.jobDescription || '');
   const [tone, setTone] = useState('professional');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState('');
 
   const generate = async () => {
@@ -36,7 +37,8 @@ export default function CoverLetterScreen() {
         job_title: jobTitle, company, job_description: jobDescription, tone,
       });
       setResult(res.data.data?.content || res.data.content || '');
-    } catch (err) { console.error(err); }
+      setError(null);
+    } catch { setError('Failed to generate. Check your connection and try again.'); }
     finally { setLoading(false); }
   };
 
@@ -96,6 +98,7 @@ export default function CoverLetterScreen() {
                 </View>
               </View>
 
+              {error && <Text style={styles.errorText}>{error}</Text>}
               <Button title={loading ? 'Generating...' : 'Generate'} onPress={generate} variant="primary" fullWidth loading={loading} />
             </GlassCard>
           </Animated.View>
@@ -135,6 +138,7 @@ const styles = StyleSheet.create({
   toneBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, borderRadius: borderRadius.full, backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.border },
   toneBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   toneLabel: { fontSize: 13, fontWeight: '500', color: colors.textSecondary },
+  errorText: { color: colors.error, fontSize: 13, textAlign: 'center' },
   toneLabelActive: { color: colors.white },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   resultText: { color: colors.textSecondary, fontSize: 14, lineHeight: 22 },

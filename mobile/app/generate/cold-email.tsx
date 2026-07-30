@@ -18,6 +18,7 @@ export default function ColdEmailScreen() {
   const [jobTitle, setJobTitle] = useState(params.jobTitle || '');
   const [recruiterName, setRecruiterName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ subject: string; body: string } | null>(null);
 
   const generate = async () => {
@@ -27,7 +28,8 @@ export default function ColdEmailScreen() {
       const res = await emailApi.generate({ company, job_title: jobTitle, recruiter_name: recruiterName || undefined });
       const data = res.data.data || res.data;
       setResult({ subject: data.subject || '', body: data.body || '' });
-    } catch (err) { console.error(err); }
+      setError(null);
+    } catch { setError('Failed to generate email. Check your connection.'); }
     finally { setLoading(false); }
   };
 
@@ -77,6 +79,7 @@ export default function ColdEmailScreen() {
                 </View>
               </View>
 
+              {error && <Text style={styles.errorText}>{error}</Text>}
               <Button title={loading ? 'Generating...' : 'Generate Email'} onPress={generate} variant="primary" fullWidth loading={loading} />
             </GlassCard>
           </Animated.View>
@@ -114,6 +117,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: spacing.xs },
   inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, height: 48, borderWidth: 1, borderColor: colors.border },
   input: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 0 },
+  errorText: { color: colors.error, fontSize: 13, textAlign: 'center' },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: spacing.xs },
   subjectText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   divider: { height: 1, backgroundColor: colors.borderLight, marginVertical: spacing.sm },

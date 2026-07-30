@@ -17,6 +17,7 @@ export default function SkillGapScreen() {
   const [targetRole, setTargetRole] = useState('');
   const [skillsText, setSkillsText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
 
   const analyze = async () => {
@@ -26,7 +27,8 @@ export default function SkillGapScreen() {
       const skills = skillsText.split(',').map(s => s.trim()).filter(Boolean);
       const res = await aiApi.skillGap({ target_role: targetRole, current_skills: skills });
       setResult(res.data.data || res.data);
-    } catch (err) { console.error(err); }
+      setError(null);
+    } catch { setError('Failed to analyze. Check your connection.'); }
     finally { setLoading(false); }
   };
 
@@ -65,6 +67,7 @@ export default function SkillGapScreen() {
                 </View>
               </View>
 
+              {error && <Text style={styles.errorText}>{error}</Text>}
               <Button title={loading ? 'Analyzing...' : 'Analyze Skill Gap'} onPress={analyze} variant="primary" fullWidth loading={loading} />
             </GlassCard>
           </Animated.View>
@@ -139,6 +142,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 0 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
   skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  errorText: { color: colors.error, fontSize: 13, textAlign: 'center' },
   emptyText: { color: colors.textMuted, fontSize: 13 },
   recItem: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm, alignItems: 'flex-start' },
   recText: { color: colors.textSecondary, fontSize: 14, flex: 1, lineHeight: 20 },

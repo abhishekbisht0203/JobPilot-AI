@@ -15,6 +15,7 @@ const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: API_TIMEOUT,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
@@ -99,17 +100,22 @@ api.interceptors.response.use(
 
 export const authApi = {
   login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }),
-  register: (name: string, email: string, password: string) =>
-    api.post('/auth/register', { name, email, password }),
-  googleAuth: (token: string) =>
-    api.post('/auth/google', { token }),
+    api.post('/user/login', { email, password }),
+  register: (fullname: string, email: string, phoneNumber: string, password: string) =>
+    api.post('/user/register', { fullname, email, phoneNumber, password }),
+  googleAuth: () => { window.location.href = `${API_URL}/user/google`; },
+  githubAuth: () => { window.location.href = `${API_URL}/user/github`; },
+  getOAuthCallback: (token: string) => api.get('/user/profile', { headers: { Authorization: `Bearer ${token}` } }),
   forgotPassword: (email: string) =>
-    api.post('/auth/forgot-password', { email }),
+    api.post('/user/forgot-password', { email }),
   resetPassword: (token: string, password: string) =>
-    api.post('/auth/reset-password', { token, password }),
-  getProfile: () => api.get('/auth/profile'),
-  updateProfile: (data: any) => api.patch('/auth/profile', data),
+    api.post('/user/reset-password', { token, password }),
+  getProfile: () => api.get('/user/profile'),
+  updateProfile: (formData: FormData) =>
+    api.post('/user/updateprofile', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  logout: () => api.get('/user/logout'),
 };
 
 export const resumeApi = {
@@ -148,32 +154,68 @@ export const emailApi = {
 };
 
 export const jobsApi = {
-  list: (params?: { page?: number; per_page?: number; search?: string; platform?: string }) =>
-    api.get('/jobs', { params }),
-  get: (id: string) => api.get(`/jobs/${id}`),
+  list: (params?: { page?: number; per_page?: number; search?: string; keyword?: string; limit?: number }) =>
+    api.get('/job/get', { params }),
+  get: (id: string) => api.get(`/job/get/${id}`),
+  getAdminJobs: (params?: { keyword?: string }) =>
+    api.get('/job/getadminjobs', { params }),
+  create: (data: any) => api.post('/job/post', data),
+  update: (id: string, data: any) => api.put(`/job/update/${id}`, data),
+  delete: (id: string) => api.delete(`/job/delete/${id}`),
   getMatchScore: (jobId: string, resumeId: string) =>
-    api.post(`/jobs/${jobId}/match-score`, { resume_id: resumeId }),
-  search: (query: string) => api.get('/jobs/search', { params: { q: query } }),
+    api.post(`/job/${jobId}/match-score`, { resume_id: resumeId }),
+  search: (query: string) => api.get('/job/search', { params: { q: query } }),
 };
 
 export const applicationsApi = {
   list: (params?: { status?: string; page?: number }) =>
-    api.get('/applications', { params }),
+    api.get('/application/get', { params }),
+  getByJob: (jobId: string) => api.get(`/application/${jobId}/applicants`),
   create: (data: { job_id: string; notes?: string }) =>
-    api.post('/applications', data),
+    api.post('/application/post', data),
   update: (id: string, data: { status?: string; notes?: string }) =>
-    api.patch(`/applications/${id}`, data),
-  delete: (id: string) => api.delete(`/applications/${id}`),
-  getStats: () => api.get('/applications/stats'),
+    api.put(`/application/update/${id}`, data),
+  delete: (id: string) => api.delete(`/application/delete/${id}`),
+  getStats: () => api.get('/application/stats'),
+};
+
+export const savedJobsApi = {
+  list: () => api.get('/saved-jobs/me'),
+  save: (jobId: string) => api.post('/saved-jobs/post', { jobId }),
+  remove: (jobId: string) => api.delete(`/saved-jobs/${jobId}`),
+};
+
+export const companiesApi = {
+  list: (params?: { page?: number; per_page?: number; search?: string; keyword?: string }) =>
+    api.get('/company/get', { params }),
+  get: (id: string) => api.get(`/company/get/${id}`),
+  create: (data: any) => api.post('/company/post', data),
+  update: (id: string, data: any) => api.put(`/company/update/${id}`, data),
+  delete: (id: string) => api.delete(`/company/delete/${id}`),
+};
+
+export const companyProfileApi = {
+  get: () => api.get('/company-profiles/me'),
+  update: (data: any) => api.put('/company-profiles/update', data),
 };
 
 export const aiApi = {
   mockInterview: (data: { job_id?: string; job_description: string }) =>
-    api.post('/ai/mock-interview', data),
+    api.post('/interviews/generate', data),
+  getInterviewResults: (sessionId: string) =>
+    api.get(`/interviews/results/${sessionId}`),
   skillGap: (data: { target_role: string; current_skills: string[] }) =>
-    api.post('/ai/skill-gap', data),
+    api.post('/resume-check/skill-gap', data),
   linkedinOptimize: (data: { profile_section: string; content: string }) =>
-    api.post('/ai/linkedin-optimize', data),
+    api.post('/resume-check/linkedin-optimize', data),
+  salaryExplorer: (params: { role?: string; location?: string }) =>
+    api.get('/salaries/explore', { params }),
+  careerRoadmap: (data: { current_role: string; target_role: string }) =>
+    api.post('/roadmaps/generate', data),
+  resumeCheck: (formData: FormData) =>
+    api.post('/resume-check/analyze', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 export const analyticsApi = {
@@ -181,10 +223,46 @@ export const analyticsApi = {
   getUsage: () => api.get('/analytics/usage'),
 };
 
-export const companiesApi = {
-  list: (params?: { page?: number; per_page?: number; search?: string }) =>
-    api.get('/jobs/companies', { params }),
-  get: (name: string) => api.get(`/jobs/companies/${encodeURIComponent(name)}`),
+export const blogsApi = {
+  list: (params?: { page?: number; per_page?: number; category?: string; search?: string }) =>
+    api.get('/blogs', { params }),
+  get: (slug: string) => api.get(`/blogs/${slug}`),
+  create: (data: any) => api.post('/blogs', data),
+  update: (id: string, data: any) => api.put(`/blogs/${id}`, data),
+  delete: (id: string) => api.delete(`/blogs/${id}`),
+  like: (id: string) => api.post(`/blogs/${id}/like`),
+  bookmark: (id: string) => api.post(`/blogs/${id}/bookmark`),
+  comment: (id: string, data: { text: string }) =>
+    api.post(`/blogs/${id}/comments`, data),
+};
+
+export const questionsApi = {
+  list: (params?: { page?: number; per_page?: number; category?: string; difficulty?: string; company?: string }) =>
+    api.get('/questions', { params }),
+  get: (id: string) => api.get(`/questions/${id}`),
+  create: (data: any) => api.post('/questions', data),
+  update: (id: string, data: any) => api.put(`/questions/${id}`, data),
+  delete: (id: string) => api.delete(`/questions/${id}`),
+  bookmark: (id: string) => api.post(`/questions/${id}/bookmark`),
+  getBookmarks: () => api.get('/questions/bookmarks'),
+};
+
+export const careerGuidesApi = {
+  list: (params?: { category?: string; page?: number }) =>
+    api.get('/career-guides', { params }),
+  get: (slug: string) => api.get(`/career-guides/${slug}`),
+  create: (data: any) => api.post('/career-guides', data),
+  update: (id: string, data: any) => api.put(`/career-guides/${id}`, data),
+  delete: (id: string) => api.delete(`/career-guides/${id}`),
+};
+
+export const resumeTemplatesApi = {
+  list: (params?: { category?: string }) =>
+    api.get('/resume-templates', { params }),
+  get: (id: string) => api.get(`/resume-templates/${id}`),
+  create: (data: any) => api.post('/resume-templates', data),
+  update: (id: string, data: any) => api.put(`/resume-templates/${id}`, data),
+  delete: (id: string) => api.delete(`/resume-templates/${id}`),
 };
 
 export const notificationsApi = {
@@ -207,10 +285,11 @@ export const contactApi = {
   listTickets: () => api.get('/contact/tickets'),
 };
 
-export const resourcesApi = {
-  list: (params?: { type?: string; page?: number }) =>
-    api.get('/resources', { params }),
-  get: (id: string) => api.get(`/resources/${id}`),
+export const supportTicketApi = {
+  create: (data: { subject: string; message: string; priority?: string }) =>
+    api.post('/support-tickets', data),
+  list: () => api.get('/support-tickets'),
+  get: (id: string) => api.get(`/support-tickets/${id}`),
 };
 
 export const subscriptionsApi = {
@@ -225,10 +304,10 @@ export const settingsApi = {
   updateNotifications: (data: Record<string, boolean>) =>
     api.patch('/users/notifications', data),
   updatePassword: (currentPassword: string, newPassword: string) =>
-    api.post('/users/change-password', { current_password: currentPassword, new_password: newPassword }),
+    api.post('/user/change-password', { current_password: currentPassword, new_password: newPassword }),
   updatePrivacy: (data: Record<string, boolean>) =>
     api.patch('/users/privacy', data),
-  deleteAccount: () => api.delete('/users/account'),
+  deleteAccount: () => api.delete('/user/delete-account'),
 };
 
 export default api;

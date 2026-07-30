@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -67,7 +68,7 @@ export default function BlogsScreen() {
 
   const renderBlogCard = useCallback(({ item, index }: { item: BlogPost; index: number }) => (
     <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(16)}>
-      <TouchableOpacity activeOpacity={0.85}>
+      <TouchableOpacity activeOpacity={0.85} onPress={() => router.push(`/(tabs)/resources/blogs/${item.id}`)}>
         <BlurView intensity={50} tint="light" style={styles.blogCard}>
           <LinearGradient colors={item.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.blogAccent} />
           <View style={styles.blogContent}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, RefreshControl,
   FlatList, ScrollView,
@@ -538,71 +538,86 @@ export default function DashboardScreen() {
     return now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   }, []);
 
+  const mountedRef = useRef(true);
+
   const fetchData = useCallback(async () => {
     try {
-      const [jobsRes, appsRes, analyticsRes, resumeRes, notifRes] = await Promise.allSettled([
-        jobsApi.list({ page: 1, per_page: 20 }),
-        applicationsApi.list(),
-        analyticsApi.getDashboard(),
-        resumeApi.list(),
-        notificationsApi.list(),
-      ]);
+      const timeout = (ms: number) => new Promise<never>((_, r) => setTimeout(() => r(new Error('timeout')), ms));
+      const fetchAll = async () => {
+        const results = await Promise.allSettled([
+          jobsApi.list({ page: 1, per_page: 20 }).catch(() => ({ data: { data: [] as Job[] } })),
+          applicationsApi.list().catch(() => ({ data: { data: [] as Application[] } })),
+          analyticsApi.getDashboard().catch(() => ({ data: { data: {} } })),
+          resumeApi.list().catch(() => ({ data: { data: [] as any[] } })),
+          notificationsApi.list().catch(() => ({ data: { data: [] as Notification[] } })),
+        ]);
+        return results;
+      };
 
-      if (jobsRes.status === 'fulfilled') {
-        const fetchedJobs = jobsRes.value.data.data || [];
+      const results = await Promise.race([fetchAll(), timeout(15000)]);
+      if (!mountedRef.current) return;
+
+      const extract = (res: any, key: string = 'data') => {
+        if (res?.status === 'fulfilled') return res.value?.data?.data ?? res.value?.data ?? [];
+        if (res?.data?.data) return res.data.data;
+        if (res?.data) return Array.isArray(res.data) ? res.data : res.data.data || [];
+        return [];
+      };
+
+      const fetchedJobs: Job[] = extract(results?.[0]);
+      if (fetchedJobs.length > 0) {
         setJobs(fetchedJobs);
         const uniqueCompanies = [...new Set(fetchedJobs.map((j: Job) => j.company).filter(Boolean))] as string[];
         setCompanies(uniqueCompanies);
       }
 
-      if (appsRes.status === 'fulfilled') {
-        const apps = appsRes.value.data.data || [];
+      const apps: Application[] = extract(results?.[1]);
+      if (apps.length > 0) {
         setApplications(apps);
         const interviewing = apps.filter((a: Application) => a.status === 'interviewing');
         const offers = apps.filter((a: Application) => a.status === 'offer');
         const total = apps.length;
-        const responseRate = total > 0 ? Math.round(((interviewing.length + offers.length) / total) * 100) : 0;
         setStats({
           totalApplications: total,
           interviewsScheduled: interviewing.length,
           offersReceived: offers.length,
-          responseRate,
+          responseRate: total > 0 ? Math.round(((interviewing.length + offers.length) / total) * 100) : 0,
         });
       }
 
-      if (analyticsRes.status === 'fulfilled') {
-        const d = analyticsRes.value.data.data || analyticsRes.value.data || {};
+      const analyticsData = extract(results?.[2]);
+      if (analyticsData && typeof analyticsData === 'object' && !Array.isArray(analyticsData)) {
         setAnalyticsExtra({
-          currentStreak: d.current_streak || 0,
-          weeklyProgress: d.weekly_applications || 0,
-          profileCompletion: d.profile_completion || 0,
+          currentStreak: analyticsData.current_streak || 0,
+          weeklyProgress: analyticsData.weekly_applications || 0,
+          profileCompletion: analyticsData.profile_completion || 0,
         });
-        if (d.recently_viewed_jobs) setJobs((prev) => prev.length ? prev : d.recently_viewed_jobs);
-      }
-
-      if (resumeRes.status === 'fulfilled') {
-        const resumes = resumeRes.value.data.data || [];
-        if (resumes.length > 0) {
-          setResumeScore(Math.max(...resumes.map((r: any) => r.ats_score || 0)));
+        if (analyticsData.recently_viewed_jobs && fetchedJobs.length === 0) {
+          setJobs(analyticsData.recently_viewed_jobs);
         }
       }
 
-      if (notifRes.status === 'fulfilled') {
-        setNotifications(notifRes.value.data.data || []);
+      const resumes = extract(results?.[3]);
+      if (resumes.length > 0) {
+        setResumeScore(Math.max(...resumes.map((r: any) => r.ats_score || 0)));
+      }
+
+      const notifs: Notification[] = extract(results?.[4]);
+      if (notifs.length > 0) {
+        setNotifications(notifs);
       }
     } catch {} finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (mountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchData();
-    const forceLoadTimeout = setTimeout(() => {
-      setLoading(false);
-      setRefreshing(false);
-    }, 8000);
-    return () => clearTimeout(forceLoadTimeout);
+    return () => { mountedRef.current = false; };
   }, []);
 
   const onRefresh = useCallback(() => {

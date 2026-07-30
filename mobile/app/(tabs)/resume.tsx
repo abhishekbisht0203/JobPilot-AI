@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-  Animated, Easing, Platform,
+  Animated, Easing, Platform, Alert,
 } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
@@ -36,17 +37,23 @@ export default function ResumeScreen() {
     ]).start();
   }, []);
 
+  const mountedRef = useRef(true);
+
   const fetchResumes = useCallback(async () => {
     try {
       const res = await resumeApi.list();
+      if (!mountedRef.current) return;
       setResumes(res.data.data || []);
-    } catch (err) {} finally {
-      setLoading(false);
-      setRefreshing(false);
+    } catch {} finally {
+      if (mountedRef.current) { setLoading(false); setRefreshing(false); }
     }
   }, []);
 
-  useEffect(() => { fetchResumes(); }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    fetchResumes();
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const handleUpload = async () => {
     try {
@@ -150,9 +157,10 @@ export default function ResumeScreen() {
 
           return (
             <Animated.View key={resume.id} style={{ opacity, transform: [{ translateY }] }}>
-              <TouchableOpacity activeOpacity={1} onPressIn={itemPressIn} onPressOut={itemPressOut}>
-                <Animated.View style={{ transform: [{ scale: itemScale }] }}>
-                  <Card style={styles.resumeCard} glowColor={colors.primary}>
+              <Card style={styles.resumeCard} glowColor={colors.primary}>
+                <TouchableOpacity activeOpacity={1} onPressIn={itemPressIn} onPressOut={itemPressOut}
+                  onPress={() => router.push({ pathname: '/generate/resume-version', params: { resumeId: resume.id } })}>
+                  <Animated.View style={{ transform: [{ scale: itemScale }] }}>
                     <View style={styles.resumeHeader}>
                       <LinearGradient colors={['#2563EB', '#4F8CFF']} style={styles.resumeIcon}>
                         <Ionicons name="document-text" size={20} color="#FFFFFF" />
@@ -181,9 +189,19 @@ export default function ResumeScreen() {
                         <Text style={styles.matchText}>{resume.ats_score}% match</Text>
                       </View>
                     )}
-                  </Card>
-                </Animated.View>
-              </TouchableOpacity>
+                  </Animated.View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.createVersionBtn}
+                  onPress={() => router.push({ pathname: '/generate/resume-version', params: { resumeId: resume.id } })}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient colors={colors.gradient.primary} style={styles.createVersionGrad}>
+                    <Ionicons name="sparkles" size={14} color="#FFF" />
+                    <Text style={styles.createVersionText}>AI Resume Builder</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Card>
             </Animated.View>
           );
         })}
@@ -231,4 +249,7 @@ const styles = StyleSheet.create({
   metaText: { color: colors.textSecondary, fontSize: 12 },
   matchBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.borderLight },
   matchText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+  createVersionBtn: { marginTop: spacing.sm, borderRadius: borderRadius.md, overflow: 'hidden' },
+  createVersionGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, gap: 6 },
+  createVersionText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
 });
