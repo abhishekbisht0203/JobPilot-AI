@@ -13,7 +13,7 @@ import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { jobsApi } from '../../../lib/api';
+import { jobApi } from '../../../lib/api';
 import { Job } from '../../../types';
 import { formatSalary, timeAgo } from '../../../lib/helpers';
 
@@ -63,7 +63,7 @@ export default function RecentlyViewedScreen() {
     try {
       const savedIds = viewedIds.map((v) => v.id);
       if (savedIds.length === 0) { setJobs([]); return; }
-      const res = await jobsApi.list({ page: 1, per_page: 100 });
+      const res = await jobApi.list({ page: 1, per_page: 50 });
       const allJobs: Job[] = res.data.data || [];
       const filtered = allJobs
         .filter((j) => savedIds.includes(j.id))
@@ -71,7 +71,7 @@ export default function RecentlyViewedScreen() {
           const entry = viewedIds.find((v) => v.id === j.id);
           return { ...j, _viewedAt: entry?.viewedAt || j.created_at };
         })
-        .sort((a, b) => new Date(b._viewedAt).getTime() - new Date(a._viewedAt).getTime());
+        .sort((a, b) => (b._viewedAt ? new Date(b._viewedAt).getTime() : 0) - (a._viewedAt ? new Date(a._viewedAt).getTime() : 0));
       setJobs(filtered as any);
     } catch {} finally {
       setLoading(false);

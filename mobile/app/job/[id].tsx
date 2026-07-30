@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Badge } from '../../components/ui/Badge';
 import { Loader } from '../../components/ui/Loader';
-import { jobsApi, applicationsApi } from '../../lib/api';
+import { jobApi, applicationApi } from '../../lib/api';
 import { Job } from '../../types';
 import { formatSalary, timeAgo, formatDate } from '../../lib/helpers';
 
@@ -24,14 +24,14 @@ export default function JobDetailScreen() {
   useEffect(() => {
     if (!id) return;
     setFetchError(null);
-    jobsApi.get(id).then((res) => setJob(res.data.data || res.data)).catch(() => setFetchError('Unable to load job details.')).finally(() => setLoading(false));
+    jobApi.get(id).then((res) => setJob(res.data.data || res.data)).catch(() => setFetchError('Unable to load job details.')).finally(() => setLoading(false));
   }, [id]);
 
   const handleApply = async () => {
     if (!job) return;
     setApplying(true);
     try {
-      await applicationsApi.create({ job_id: job.id });
+      await applicationApi.create({ job_id: job.id });
       Linking.openURL(job.url);
     } catch (err) {
       Linking.openURL(job.url);
@@ -98,7 +98,7 @@ export default function JobDetailScreen() {
                 </View>
                 <View style={styles.metaItem}>
                   <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-                  <Text style={styles.metaText}>{timeAgo(job.posted_at)}</Text>
+                  <Text style={styles.metaText}>{timeAgo(job.posted_at || '')}</Text>
                 </View>
               </View>
             </GlassCard>

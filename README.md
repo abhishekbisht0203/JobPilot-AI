@@ -88,6 +88,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 cd mobile
 cp .env.example .env   # Set EXPO_PUBLIC_API_URL
 npm install
+npx expo start 
+#or
 npm start
 ```
 

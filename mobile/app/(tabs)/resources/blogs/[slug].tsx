@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius, shadow } from '../../../../lib/theme';
 import { GlassCard } from '../../../../components/ui/GlassCard';
 import { Badge } from '../../../../components/ui/Badge';
 import { Loader } from '../../../../components/ui/Loader';
-import { blogsApi } from '../../../../lib/api';
+import { resourceApi } from '../../../../lib/api';
 import { timeAgo } from '../../../../lib/helpers';
 
 export default function BlogDetailScreen() {
@@ -22,8 +22,8 @@ export default function BlogDetailScreen() {
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
-    blogsApi.get(slug)
-      .then((res) => setPost(res.data.data || res.data))
+    resourceApi.get(slug)
+      .then((res: any) => setPost(res.data.data || res.data))
       .catch(() => setError('Failed to load blog post'))
       .finally(() => setLoading(false));
   }, [slug]);

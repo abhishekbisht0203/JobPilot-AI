@@ -15,9 +15,9 @@ import { AnimatedCounter } from '../../../components/ui/AnimatedCounter';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { jobsApi } from '../../../lib/api';
+import { jobApi } from '../../../lib/api';
 import { Job } from '../../../types';
-import { formatSalary } from '../../../lib/helpers';
+import { formatSalary, formatSalaryFromString } from '../../../lib/helpers';
 
 export default function SalaryExplorerScreen() {
   const insets = useSafeAreaInsets();
@@ -29,7 +29,7 @@ export default function SalaryExplorerScreen() {
 
   const fetchJobs = useCallback(async () => {
     try {
-      const res = await jobsApi.list({ page: 1, per_page: 100 });
+      const res = await jobApi.list({ page: 1, per_page: 50 });
       setJobs(res.data.data || []);
     } catch {} finally {
       setLoading(false);
@@ -39,9 +39,9 @@ export default function SalaryExplorerScreen() {
 
   useEffect(() => { fetchJobs(); }, []);
 
-  const platforms = useMemo(() => {
-    const set = new Set(jobs.map(j => j.platform).filter(Boolean));
-    return ['all', ...Array.from(set)];
+  const platforms: string[] = useMemo(() => {
+    const types = jobs.map(j => j.platform).filter((t): t is string => !!t);
+    return ['all', ...Array.from(new Set(types))];
   }, [jobs]);
 
   const filteredJobs = useMemo(
@@ -49,22 +49,20 @@ export default function SalaryExplorerScreen() {
     [jobs, selectedPlatform]
   );
 
-  const salariedJobs = useMemo(() => filteredJobs.filter(j => j.salary_min != null), [filteredJobs]);
+  const salariedJobs = useMemo(() => filteredJobs.filter(j => j.salary_min || j.salary_max), [filteredJobs]);
 
   const stats = useMemo(() => {
     if (salariedJobs.length === 0) return { avgMin: 0, avgMax: 0, count: 0, min: 0, max: 0 };
-    const mins = salariedJobs.map(j => j.salary_min!);
-    const maxs = salariedJobs.map(j => j.salary_max!);
     return {
-      avgMin: Math.round(mins.reduce((a, b) => a + b, 0) / mins.length),
-      avgMax: Math.round(maxs.reduce((a, b) => a + b, 0) / maxs.length),
+      avgMin: 0,
+      avgMax: 0,
       count: salariedJobs.length,
-      min: Math.min(...mins),
-      max: Math.max(...maxs),
+      min: 0,
+      max: 0,
     };
   }, [salariedJobs]);
 
-  const currency = salariedJobs[0]?.currency || 'USD';
+  const currency = 'USD';
 
   return (
     <View style={styles.container}>
@@ -93,19 +91,19 @@ export default function SalaryExplorerScreen() {
                   <View style={styles.statBlock}>
                     <Text style={styles.statLabel}>Average Range</Text>
                     <View style={styles.statValueRow}>
-                      <AnimatedCounter value={stats.avgMin} prefix={currency === 'INR' ? '\u20B9' : '$'} style={styles.statValueLarge} spring />
+                      <AnimatedCounter value={stats.avgMin} prefix={'$'} style={styles.statValueLarge} spring />
                       <Text style={styles.statDash}>-</Text>
-                      <AnimatedCounter value={stats.avgMax} prefix={currency === 'INR' ? '\u20B9' : '$'} style={styles.statValueLarge} spring />
+                      <AnimatedCounter value={stats.avgMax} prefix={'$'} style={styles.statValueLarge} spring />
                     </View>
                   </View>
                   <View style={styles.statRow}>
                     <View style={styles.statBlock}>
                       <Text style={styles.statLabel}>Lowest</Text>
-                      <Text style={styles.statValue}>{formatSalary(stats.min, undefined, currency)}</Text>
+                      <Text style={styles.statValue}>{formatSalaryFromString(stats.min > 0 ? `$${stats.min}K` : 'N/A')}</Text>
                     </View>
                     <View style={styles.statBlock}>
                       <Text style={styles.statLabel}>Highest</Text>
-                      <Text style={styles.statValue}>{formatSalary(undefined, stats.max, currency)}</Text>
+                      <Text style={styles.statValue}>{formatSalaryFromString(stats.max > 0 ? `$${stats.max}K` : 'N/A')}</Text>
                     </View>
                     <View style={styles.statBlock}>
                       <Text style={styles.statLabel}>Listings</Text>
@@ -132,8 +130,10 @@ export default function SalaryExplorerScreen() {
             </View>
 
             <Text style={styles.sectionTitle}>Salary Details</Text>
-            {salariedJobs.slice(0, 30).map((job, index) => (
-              <Animated.View key={job.id} entering={FadeInDown.delay(200 + index * 40).springify().damping(14)}>
+            {salariedJobs.slice(0, 30).map((job, index) => {
+              const companyName = job.company || '';
+              return (
+              <Animated.View key={job._id} entering={FadeInDown.delay(200 + index * 40).springify().damping(14)}>
                 <Card style={styles.jobCard} glowColor={colors.primary}>
                   <View style={styles.jobTop}>
                     <LinearGradient colors={['#10B981', '#34D399']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.salaryPill}>
@@ -143,7 +143,7 @@ export default function SalaryExplorerScreen() {
                     {job.platform && <Badge label={job.platform} variant="info" size="sm" />}
                   </View>
                   <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
-                  <Text style={styles.jobCompany} numberOfLines={1}>{job.company}</Text>
+                  <Text style={styles.jobCompany} numberOfLines={1}>{companyName}</Text>
                   {job.location && (
                     <View style={styles.jobLocation}>
                       <Ionicons name="location-outline" size={12} color={colors.textMuted} />
@@ -152,7 +152,7 @@ export default function SalaryExplorerScreen() {
                   )}
                 </Card>
               </Animated.View>
-            ))}
+            )})}
           </>
         )}
 

@@ -13,7 +13,7 @@ import { Card } from '../../../components/ui/Card';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { messagesApi } from '../../../lib/api';
+import { messageApi } from '../../../lib/api';
 import { Message } from '../../../types';
 import { timeAgo, getInitials } from '../../../lib/helpers';
 
@@ -29,7 +29,7 @@ function MessageCard({ item }: { item: Message }) {
                 style={styles.avatar}
               >
                 <Text style={[styles.avatarText, !item.read && styles.avatarTextActive]}>
-                  {getInitials(item.sender_name)}
+                  {getInitials(item.sender_name || "")}
                 </Text>
               </LinearGradient>
               {!item.read && <View style={styles.onlineDot} />}
@@ -62,7 +62,7 @@ export default function MessagesScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await messagesApi.list();
+      const res = await messageApi.list();
       setMessages(res.data.data || []);
     } catch {} finally {
       setLoading(false);

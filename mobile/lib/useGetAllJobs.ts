@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { jobsApi } from './api';
+import { jobApi } from './api';
 import { useJobStore } from '../store';
 import { Job } from '../types';
 
@@ -32,24 +32,24 @@ export function useGetAllJobs(options: UseGetAllJobsOptions = {}): UseGetAllJobs
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const setJobs = useJobStore((s) => s.setJobs);
-  const addJobs = useJobStore((s) => s.addJobs);
+  const setAllJobs = useJobStore((s) => s.setAllJobs);
   const jobs = useJobStore((s) => s.allJobs);
 
   const fetchJobs = useCallback(async (pageNum: number, append: boolean = false) => {
     try {
       if (!append) setLoading(true);
       setError(null);
-      const res = await jobsApi.list({ page: pageNum, per_page: perPage, keyword: keyword || search });
+      const res = await jobApi.list({ page: pageNum, per_page: perPage, search: search || keyword });
       const data = res.data;
       const items: Job[] = data.data || data.jobs || data.items || data || [];
       const totalCount = data.total || items.length;
       const pages = data.total_pages || Math.ceil(totalCount / perPage);
 
       if (append) {
-        addJobs(items);
+        const currentJobs = useJobStore.getState().allJobs;
+        setAllJobs([...currentJobs, ...items]);
       } else {
-        setJobs(items);
+        setAllJobs(items);
       }
       setTotal(totalCount);
       setTotalPages(pages || 1);
@@ -59,7 +59,7 @@ export function useGetAllJobs(options: UseGetAllJobsOptions = {}): UseGetAllJobs
       setLoading(false);
       setRefreshing(false);
     }
-  }, [perPage, search, keyword, setJobs, addJobs]);
+  }, [perPage, search, keyword, setAllJobs]);
 
   useEffect(() => {
     fetchJobs(page, page > 1);

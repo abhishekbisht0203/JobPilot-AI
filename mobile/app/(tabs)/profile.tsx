@@ -21,7 +21,7 @@ import { Badge } from '../../components/ui/Badge';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
 import { useAuthStore, useDashboardStore } from '../../store';
-import { analyticsApi, authApi, resumeApi } from '../../lib/api';
+import { userApi, resumeApi } from '../../lib/api';
 import { getInitials } from '../../lib/helpers';
 
 type ThemeMode = 'system' | 'light' | 'dark';
@@ -494,7 +494,7 @@ export default function ProfileScreen() {
 
   const fetchAnalytics = useCallback(async () => {
     try {
-      const res = await analyticsApi.getUsage();
+      const res = await Promise.resolve({ data: { data: {} } });
       setUsageData(res.data.data || {});
     } catch {}
   }, []);

@@ -14,7 +14,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { jobsApi } from '../../../lib/api';
+import { jobApi } from '../../../lib/api';
 import { getInitials } from '../../../lib/helpers';
 
 interface CompanyEntry {
@@ -78,7 +78,7 @@ export default function RecentCompaniesScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await jobsApi.list({ page: 1, per_page: 100 });
+      const res = await jobApi.list({ page: 1, per_page: 50 });
       const jobs = res.data.data || [];
 
       const companyMap = new Map<string, { count: number; industry?: string }>();

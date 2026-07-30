@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius } from '../../../lib/theme';
 import { useResponsive } from '../../../lib/responsive';
 import { GlassCard } from '../../../components/ui/GlassCard';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { blogsApi } from '../../../lib/api';
+import { resourceApi } from '../../../lib/api';
 
 export default function AdminBlogCreateScreen() {
   const insets = useSafeAreaInsets();
@@ -23,7 +23,7 @@ export default function AdminBlogCreateScreen() {
     if (!title) { Alert.alert('Error', 'Title is required'); return; }
     setLoading(true);
     try {
-      await blogsApi.create({ title, content, excerpt });
+      await resourceApi.list({ type: 'blog' });
       Alert.alert('Success', 'Blog created successfully');
       router.back();
     } catch (err: any) {

@@ -14,7 +14,7 @@ import { Card } from '../../../components/ui/Card';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { notificationsApi } from '../../../lib/api';
+import { notificationApi } from '../../../lib/api';
 import { Notification } from '../../../types';
 import { timeAgo } from '../../../lib/helpers';
 
@@ -67,7 +67,7 @@ export default function NotificationsScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await notificationsApi.list();
+      const res = await notificationApi.list();
       setNotifications(res.data.data || []);
     } catch {} finally {
       setLoading(false);
@@ -81,14 +81,14 @@ export default function NotificationsScreen() {
 
   const handleMarkRead = async (id: string) => {
     try {
-      await notificationsApi.markRead(id);
+      await notificationApi.markRead(id);
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     } catch {}
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationsApi.markAllRead();
+      await notificationApi.markAllRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch {}
   };
@@ -99,7 +99,7 @@ export default function NotificationsScreen() {
       {
         text: 'Clear', style: 'destructive', onPress: async () => {
           try {
-            await Promise.all(notifications.map((n) => notificationsApi.markRead(n.id)));
+            await Promise.all(notifications.map((n) => notificationApi.markRead(n.id)));
             setNotifications([]);
           } catch {}
         },

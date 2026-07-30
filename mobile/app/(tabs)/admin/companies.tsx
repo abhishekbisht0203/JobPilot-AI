@@ -23,7 +23,7 @@ export default function AdminCompaniesScreen() {
     <View style={styles.container}>
       <FlatList
         data={companies}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id || item._id}
         contentContainerStyle={[styles.list, { paddingHorizontal: horizontalPadding, paddingTop: insets.top + 12 }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={

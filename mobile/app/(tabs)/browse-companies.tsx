@@ -19,7 +19,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
-import { jobsApi } from '../../lib/api';
+import { jobApi } from '../../lib/api';
 import { Job, Company } from '../../types';
 import { getInitials, truncate } from '../../lib/helpers';
 
@@ -63,9 +63,9 @@ function extractCompanies(jobs: Job[]): Company[] {
       id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       industry: deriveIndustry(companyJobs),
       description: truncate(firstDesc, 160),
-      location: locations[0] || 'Remote',
+      locations: locations.length > 0 ? [locations[0]] : ['Remote'],
       open_jobs_count: companyJobs.length,
-      tech_stack: allSkills.slice(0, 25),
+      skills: allSkills.slice(0, 25),
       hiring: true,
       created_at: new Date().toISOString(),
     } as Company;
@@ -96,10 +96,10 @@ function CompanyCard({ company, index }: { company: Company; index: number }) {
                 <Text style={styles.companyName} numberOfLines={1}>{company.name}</Text>
                 <View style={styles.cardMetaRow}>
                   {company.industry && <Badge label={company.industry} variant="info" size="sm" />}
-                  {company.location && (
+                  {company.locations?.[0] && (
                     <View style={styles.locationRow}>
                       <Ionicons name="location-outline" size={12} color={colors.textMuted} />
-                      <Text style={styles.locationText} numberOfLines={1}>{company.location}</Text>
+                      <Text style={styles.locationText} numberOfLines={1}>{company.locations?.[0] || ''}</Text>
                     </View>
                   )}
                 </View>
@@ -114,15 +114,15 @@ function CompanyCard({ company, index }: { company: Company; index: number }) {
               <Text style={styles.companyDesc} numberOfLines={2}>{company.description}</Text>
             ) : null}
 
-            {company.tech_stack && company.tech_stack.length > 0 && (
+            {company.skills && company.skills.length > 0 && (
               <View style={styles.skillsRow}>
-                {company.tech_stack.slice(0, 4).map((skill, i) => (
+                {company.skills.slice(0, 4).map((skill, i) => (
                   <View key={i} style={styles.skillChip}>
                     <Text style={styles.skillChipText}>{skill}</Text>
                   </View>
                 ))}
-                {company.tech_stack.length > 4 && (
-                  <Text style={styles.moreSkills}>+{company.tech_stack.length - 4}</Text>
+                {company.skills.length > 4 && (
+                  <Text style={styles.moreSkills}>+{company.skills.length - 4}</Text>
                 )}
               </View>
             )}
@@ -249,7 +249,7 @@ export default function BrowseCompaniesScreen() {
 
   const fetchCompanies = useCallback(async () => {
     try {
-      const res = await jobsApi.list({ page: 1, per_page: 100 });
+      const res = await jobApi.list({ page: 1, per_page: 100 });
       const jobs: Job[] = res.data.data || [];
       const extracted = extractCompanies(jobs);
       setCompanies(extracted);
@@ -271,8 +271,8 @@ export default function BrowseCompaniesScreen() {
         const q = searchQuery.toLowerCase();
         const name = c.name.toLowerCase();
         const industry = (c.industry || '').toLowerCase();
-        const location = (c.location || '').toLowerCase();
-        const skills = (c.tech_stack || []).join(' ').toLowerCase();
+        const location = (c.locations?.[0] || '').toLowerCase();
+        const skills = (c.skills || []).join(' ').toLowerCase();
         if (!name.includes(q) && !industry.includes(q) && !location.includes(q) && !skills.includes(q)) return false;
       }
       if (selectedIndustry && c.industry !== selectedIndustry) return false;

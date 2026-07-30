@@ -168,7 +168,7 @@ export default function ResumeScreen() {
                       <View style={{ flex: 1, marginLeft: spacing.sm }}>
                         <Text style={styles.resumeName} numberOfLines={1}>{resume.original_filename}</Text>
                         <Text style={styles.resumeDate}>
-                          {formatDate(resume.created_at)}
+                          {formatDate(resume.created_at || '')}
                         </Text>
                       </View>
                       <TouchableOpacity onPress={() => handleDelete(resume.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

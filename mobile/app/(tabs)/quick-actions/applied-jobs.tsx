@@ -17,7 +17,7 @@ import { EmptyState } from '../../../components/ui/EmptyState';
 import { JobCardSkeleton } from '../../../components/ui/Skeleton';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { applicationsApi } from '../../../lib/api';
+import { applicationApi } from '../../../lib/api';
 import { Application } from '../../../types';
 import { formatDate } from '../../../lib/helpers';
 
@@ -43,8 +43,8 @@ export default function AppliedJobsScreen() {
   const fetchData = useCallback(async () => {
     try {
       const [appsRes, statsRes] = await Promise.all([
-        applicationsApi.list(),
-        applicationsApi.getStats(),
+        applicationApi.list(),
+        applicationApi.getStats(),
       ]);
       setApplications(appsRes.data.data || []);
       setStats(statsRes.data.data || {});

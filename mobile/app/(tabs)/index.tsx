@@ -13,8 +13,12 @@ import Animated, {
   SlideInRight,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
-import { useResponsive } from '../../lib/responsive';
+import { colors, shadow } from '../../lib/theme';
+
+// Use responsive spacing/borderRadius for module-level StyleSheet
+const spacing = responsiveSpacing;
+const borderRadius = responsiveBorderRadius;
+import { useResponsive, responsiveSpacing, responsiveBorderRadius, fs, rs, wp, responsiveHorizontalPadding } from '../../lib/responsive';
 import { MeshGradient } from '../../components/ui/MeshGradient';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Card } from '../../components/ui/Card';
@@ -23,10 +27,10 @@ import { Skeleton, JobCardSkeleton } from '../../components/ui/Skeleton';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
-import { jobsApi, applicationsApi, analyticsApi, resumeApi, notificationsApi } from '../../lib/api';
-import { useJobStore, useAuthStore } from '../../store';
+import { jobApi, applicationApi, resumeApi, notificationApi } from '../../lib/api';
+import { useSavedJobsStore, useAuthStore } from '../../store';
 import { Job, Application, Notification } from '../../types';
-import { formatSalary, timeAgo, formatDate, getInitials, getMatchColor } from '../../lib/helpers';
+import { formatSalary, formatSalaryFromString, timeAgo, formatDate, getInitials, getMatchColor } from '../../lib/helpers';
 
 const AI_TIPS = [
   'Tailor your resume keywords to match the job description for higher ATS scores.',
@@ -191,24 +195,27 @@ function RecentlyViewedJobs({ jobs }: { jobs: Job[] }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         data={jobs.slice(0, 10)}
-        keyExtractor={(item) => `rv-${item.id}`}
+        keyExtractor={(item: any) => `rv-${item.id || item._id}`}
         contentContainerStyle={styles.horizontalListContent}
-        renderItem={({ item, index }) => (
+        renderItem={({ item, index }) => {
+          const companyName = item.company || '';
+          return (
           <Animated.View entering={SlideInRight.delay(420 + index * 60).springify().damping(14)}>
-            <TouchableOpacity onPress={() => router.push(`/job/${item.id}`)} activeOpacity={0.9}>
+            <TouchableOpacity onPress={() => router.push(`/job/${item.id || item._id}`)} activeOpacity={0.9}>
               <GlassCard style={styles.recentJobCard} glowColor={colors.primary}>
                 <LinearGradient colors={['#3B82F6', '#6366F1']} style={styles.recentJobIcon}>
-                  <Text style={styles.recentJobIconText}>{(item.company || 'C')[0]}</Text>
+                  <Text style={styles.recentJobIconText}>{companyName[0] || 'C'}</Text>
                 </LinearGradient>
                 <Text style={styles.recentJobTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.recentJobCompany} numberOfLines={1}>{item.company}</Text>
-                {item.salary_min && (
+                <Text style={styles.recentJobCompany} numberOfLines={1}>{companyName}</Text>
+                {(item.salary_min || item.salary_max) && (
                   <Text style={styles.recentJobSalary}>{formatSalary(item.salary_min, item.salary_max, item.currency)}</Text>
                 )}
               </GlassCard>
             </TouchableOpacity>
           </Animated.View>
-        )}
+        );
+      }}
       />
     </View>
   );
@@ -225,7 +232,7 @@ function FeaturedCompaniesSection({ companies }: { companies: string[] }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         data={companies}
-        keyExtractor={(item) => `fc-${item}`}
+        keyExtractor={(item: any) => `fc-${item.id || item._id || item}`}
         contentContainerStyle={styles.horizontalListContent}
         renderItem={({ item, index }) => (
           <Animated.View entering={SlideInRight.delay(470 + index * 60).springify().damping(14)}>
@@ -283,11 +290,14 @@ function UpcomingInterviewsSection({ applications: apps }: { applications: Appli
         horizontal
         showsHorizontalScrollIndicator={false}
         data={apps}
-        keyExtractor={(item) => `int-${item.id}`}
+        keyExtractor={(item: any) => `int-${item.id || item._id}`}
         contentContainerStyle={styles.horizontalListContent}
-        renderItem={({ item, index }) => (
+        renderItem={({ item, index }) => {
+          const jobTitle = typeof item.job === 'object' ? item.job?.title : 'Interview';
+          const jobCompany = typeof item.job === 'object' ? (item.job?.company || 'Company') : 'Company';
+          return (
           <Animated.View entering={SlideInRight.delay(570 + index * 60).springify().damping(14)}>
-            <TouchableOpacity onPress={() => item.job && router.push(`/job/${item.job.id}`)} activeOpacity={0.9}>
+            <TouchableOpacity onPress={() => item.job && router.push(`/job/${typeof item.job === 'object' ? (item.job.id || item.job._id) : item.job}`)} activeOpacity={0.9}>
               <GlassCard style={styles.interviewCard} glowColor={colors.success}>
                 <View style={styles.interviewCardTop}>
                   <LinearGradient colors={colors.gradient.success} style={styles.interviewIcon}>
@@ -295,18 +305,19 @@ function UpcomingInterviewsSection({ applications: apps }: { applications: Appli
                   </LinearGradient>
                   <Badge label="Interviewing" variant="success" size="sm" animated />
                 </View>
-                <Text style={styles.interviewTitle} numberOfLines={1}>{item.job?.title || 'Interview'}</Text>
-                <Text style={styles.interviewCompany} numberOfLines={1}>{item.job?.company || 'Company'}</Text>
-                {item.follow_up_at && (
+                <Text style={styles.interviewTitle} numberOfLines={1}>{jobTitle}</Text>
+                <Text style={styles.interviewCompany} numberOfLines={1}>{jobCompany}</Text>
+                {item.created_at && (
                   <View style={styles.interviewDateRow}>
                     <Ionicons name="time-outline" size={12} color={colors.textMuted} />
-                    <Text style={styles.interviewDate}>{formatDate(item.follow_up_at)}</Text>
+                    <Text style={styles.interviewDate}>{formatDate(item.created_at)}</Text>
                   </View>
                 )}
               </GlassCard>
             </TouchableOpacity>
           </Animated.View>
-        )}
+        );
+      }}
       />
     </View>
   );
@@ -392,7 +403,7 @@ function NotificationsPreviewSection({ notifications }: { notifications: Notific
         <Text style={styles.sectionTitle}>Recent Activity</Text>
       </Animated.View>
       {notifications.slice(0, 3).map((notif, index) => (
-        <Animated.View key={notif.id} entering={FadeInUp.delay(720 + index * 60).springify().damping(14)}>
+        <Animated.View key={notif._id} entering={FadeInUp.delay(720 + index * 60).springify().damping(14)}>
           <GlassCard style={styles.notifCard} glowColor={notif.read ? undefined : colors.primary}>
             <View style={styles.notifRow}>
               <View style={[styles.notifDot, !notif.read && styles.notifDotUnread]} />
@@ -405,9 +416,9 @@ function NotificationsPreviewSection({ notifications }: { notifications: Notific
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={styles.notifTitle} numberOfLines={1}>{notif.title}</Text>
-                <Text style={styles.notifBody} numberOfLines={1}>{notif.body}</Text>
+                <Text style={styles.notifBody} numberOfLines={1}>{notif.message}</Text>
               </View>
-              <Text style={styles.notifTime}>{timeAgo(notif.created_at)}</Text>
+              <Text style={styles.notifTime}>{timeAgo(notif.created_at || '')}</Text>
             </View>
           </GlassCard>
         </Animated.View>
@@ -447,8 +458,8 @@ function AITipSection() {
   );
 }
 
-function RecommendedJobsSection({ jobs, savedJobs, onToggleSave }: {
-  jobs: Job[]; savedJobs: string[]; onToggleSave: (id: string) => void;
+function RecommendedJobsSection({ jobs, savedIds, onToggleSave }: {
+  jobs: Job[]; savedIds: string[]; onToggleSave: (id: string) => void;
 }) {
   if (!jobs.length) return null;
   return (
@@ -456,48 +467,50 @@ function RecommendedJobsSection({ jobs, savedJobs, onToggleSave }: {
       <Animated.View entering={FadeInDown.delay(800).springify().damping(14)}>
         <Text style={styles.sectionTitle}>Recommended Jobs</Text>
       </Animated.View>
-      {jobs.slice(0, 5).map((item, index) => (
-        <Animated.View key={item.id} entering={FadeInUp.delay(820 + index * 60).springify().damping(14)}>
-          <Card onPress={() => router.push(`/job/${item.id}`)} style={styles.jobCard} glowColor={colors.primary}>
+      {jobs.slice(0, 5).map((item, index) => {
+        const companyName = item.company || '';
+        return (
+        <Animated.View key={item.id || item._id} entering={FadeInUp.delay(820 + index * 60).springify().damping(14)}>
+          <Card onPress={() => router.push(`/job/${item.id || item._id}`)} style={styles.jobCard} glowColor={colors.primary}>
             <View style={styles.jobHeader}>
               <LinearGradient colors={['#3B82F6', '#6366F1']} style={styles.jobIcon}>
-                <Text style={styles.jobIconText}>{(item.company || 'C')[0].toUpperCase()}</Text>
+                <Text style={styles.jobIconText}>{companyName[0]?.toUpperCase() || 'C'}</Text>
               </LinearGradient>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={styles.jobTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.jobCompany} numberOfLines={1}>{item.company}</Text>
+                <Text style={styles.jobCompany} numberOfLines={1}>{companyName}</Text>
               </View>
-              <TouchableOpacity onPress={() => onToggleSave(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name={savedJobs.includes(item.id) ? 'bookmark' : 'bookmark-outline'} size={20}
-                  color={savedJobs.includes(item.id) ? colors.primary : colors.textMuted} />
+              <TouchableOpacity onPress={() => onToggleSave(item.id || item._id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name={savedIds.includes(item.id || item._id) ? 'bookmark' : 'bookmark-outline'} size={20}
+                  color={savedIds.includes(item.id || item._id) ? colors.primary : colors.textMuted} />
               </TouchableOpacity>
             </View>
             <View style={styles.jobTags}>
-              {item.match_score ? (
-                <Badge label={`${item.match_score}% Match`} variant={item.match_score >= 80 ? 'success' : item.match_score >= 60 ? 'warning' : 'default'} size="sm" animated />
-              ) : <Badge label="New" variant="info" size="sm" />}
+              <Badge label="New" variant="info" size="sm" />
               {item.location && <Badge label={item.location} variant="default" size="sm" />}
-              {item.posted_at && <Badge label={timeAgo(item.posted_at)} variant="default" size="sm" />}
+              {item.created_at && <Badge label={timeAgo(item.created_at)} variant="default" size="sm" />}
             </View>
             <Text style={styles.jobDesc} numberOfLines={2}>{item.description}</Text>
             <View style={styles.jobFooter}>
-              <View style={styles.jobSkills}>
-                {item.skills?.slice(0, 3).map((s, i) => (
-                  <View key={i} style={styles.skillChip}>
-                    <Text style={styles.skillChipText}>{s}</Text>
+              {item.skills?.length > 0 && (
+                <View style={styles.jobSkills}>
+                  <View style={styles.skillChip}>
+                    <Text style={styles.skillChipText}>{item.platform || 'Full-time'}</Text>
                   </View>
-                ))}
-                {item.skills && item.skills.length > 3 && (
-                  <Text style={styles.moreSkills}>+{item.skills.length - 3}</Text>
-                )}
-              </View>
-              {item.salary_min && (
+                  {item.skills?.length > 0 && (
+                    <View style={styles.skillChip}>
+                      <Text style={styles.skillChipText}>{item.description?.substring(0, 80)}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+              {(item.salary_min || item.salary_max) && (
                 <Text style={styles.jobSalary}>{formatSalary(item.salary_min, item.salary_max, item.currency)}</Text>
               )}
             </View>
           </Card>
         </Animated.View>
-      ))}
+      )})}
     </View>
   );
 }
@@ -528,7 +541,8 @@ export default function DashboardScreen() {
   const [resumeScore, setResumeScore] = useState(0);
   const [companies, setCompanies] = useState<string[]>([]);
 
-  const { savedJobs, toggleSaveJob } = useJobStore();
+  const savedIds = useSavedJobsStore((s) => s.savedIds);
+  const toggleSave = useSavedJobsStore((s) => s.toggleSave);
   const user = useAuthStore((s) => s.user);
   const insets = useSafeAreaInsets();
   const { horizontalPadding } = useResponsive();
@@ -545,11 +559,10 @@ export default function DashboardScreen() {
       const timeout = (ms: number) => new Promise<never>((_, r) => setTimeout(() => r(new Error('timeout')), ms));
       const fetchAll = async () => {
         const results = await Promise.allSettled([
-          jobsApi.list({ page: 1, per_page: 20 }).catch(() => ({ data: { data: [] as Job[] } })),
-          applicationsApi.list().catch(() => ({ data: { data: [] as Application[] } })),
-          analyticsApi.getDashboard().catch(() => ({ data: { data: {} } })),
+          jobApi.list({ page: 1, per_page: 20 }).catch(() => ({ data: { data: [] as Job[] } })),
+          applicationApi.list().catch(() => ({ data: { data: [] as Application[] } })),
           resumeApi.list().catch(() => ({ data: { data: [] as any[] } })),
-          notificationsApi.list().catch(() => ({ data: { data: [] as Notification[] } })),
+          notificationApi.list().catch(() => ({ data: { data: [] as Notification[] } })),
         ]);
         return results;
       };
@@ -567,42 +580,32 @@ export default function DashboardScreen() {
       const fetchedJobs: Job[] = extract(results?.[0]);
       if (fetchedJobs.length > 0) {
         setJobs(fetchedJobs);
-        const uniqueCompanies = [...new Set(fetchedJobs.map((j: Job) => j.company).filter(Boolean))] as string[];
+        const uniqueCompanies = [...new Set(fetchedJobs.map((j: Job) => {
+          const name = j.company;
+          return name;
+        }).filter(Boolean))] as string[];
         setCompanies(uniqueCompanies);
       }
 
       const apps: Application[] = extract(results?.[1]);
       if (apps.length > 0) {
         setApplications(apps);
-        const interviewing = apps.filter((a: Application) => a.status === 'interviewing');
-        const offers = apps.filter((a: Application) => a.status === 'offer');
+        const accepted = apps.filter((a: Application) => a.status === 'accepted');
         const total = apps.length;
         setStats({
           totalApplications: total,
-          interviewsScheduled: interviewing.length,
-          offersReceived: offers.length,
-          responseRate: total > 0 ? Math.round(((interviewing.length + offers.length) / total) * 100) : 0,
+          interviewsScheduled: accepted.length,
+          offersReceived: accepted.length,
+          responseRate: total > 0 ? Math.round((accepted.length / total) * 100) : 0,
         });
       }
 
-      const analyticsData = extract(results?.[2]);
-      if (analyticsData && typeof analyticsData === 'object' && !Array.isArray(analyticsData)) {
-        setAnalyticsExtra({
-          currentStreak: analyticsData.current_streak || 0,
-          weeklyProgress: analyticsData.weekly_applications || 0,
-          profileCompletion: analyticsData.profile_completion || 0,
-        });
-        if (analyticsData.recently_viewed_jobs && fetchedJobs.length === 0) {
-          setJobs(analyticsData.recently_viewed_jobs);
-        }
-      }
-
-      const resumes = extract(results?.[3]);
+      const resumes = extract(results?.[2]);
       if (resumes.length > 0) {
         setResumeScore(Math.max(...resumes.map((r: any) => r.ats_score || 0)));
       }
 
-      const notifs: Notification[] = extract(results?.[4]);
+      const notifs: Notification[] = extract(results?.[3]);
       if (notifs.length > 0) {
         setNotifications(notifs);
       }
@@ -625,7 +628,7 @@ export default function DashboardScreen() {
     fetchData();
   }, [fetchData]);
 
-  const interviewingApps = useMemo(() => applications.filter((a) => a.status === 'interviewing'), [applications]);
+  const interviewingApps = useMemo(() => applications.filter((a) => a.status === 'accepted'), [applications]);
   const profileCompletion = analyticsExtra.profileCompletion || Math.min((stats.totalApplications > 0 ? 40 : 0) + (resumeScore > 0 ? 30 : 0) + (user?.name ? 15 : 0) + (stats.interviewsScheduled > 0 ? 15 : 0), 100);
 
   const renderHeader = useCallback(() => (
@@ -655,7 +658,7 @@ export default function DashboardScreen() {
 
               <AITipSection />
 
-              <RecommendedJobsSection jobs={jobs} savedJobs={savedJobs} onToggleSave={toggleSaveJob} />
+              <RecommendedJobsSection jobs={jobs} savedIds={savedIds} onToggleSave={toggleSave} />
 
               <Animated.View entering={FadeInDown.delay(900).springify().damping(14)} style={styles.section}>
                 <Text style={styles.sectionTitle}>
@@ -667,50 +670,52 @@ export default function DashboardScreen() {
         </View>
       </View>
     </View>
-  ), [user, dateStr, stats, jobs, companies, interviewingApps, resumeScore, profileCompletion, notifications, savedJobs, toggleSaveJob, loading, horizontalPadding, insets.top]);
+  ), [user, dateStr, stats, jobs, companies, interviewingApps, resumeScore, profileCompletion, notifications, savedIds, toggleSave, loading, horizontalPadding, insets.top]);
 
-  const renderJob = useCallback(({ item, index }: { item: Job; index: number }) => (
+  const renderJob = useCallback(({ item, index }: { item: Job; index: number }) => {
+    const companyName = item.company || '';
+    return (
     <Animated.View entering={FadeInUp.delay(100 + index * 30).springify().damping(14)}>
-      <Card onPress={() => router.push(`/job/${item.id}`)} style={styles.jobCard} glowColor={colors.primary}>
+      <Card onPress={() => router.push(`/job/${item.id || item._id}`)} style={styles.jobCard} glowColor={colors.primary}>
         <View style={styles.jobHeader}>
           <LinearGradient colors={['#3B82F6', '#6366F1']} style={styles.jobIcon}>
-            <Text style={styles.jobIconText}>{(item.company || 'C')[0].toUpperCase()}</Text>
+            <Text style={styles.jobIconText}>{companyName[0]?.toUpperCase() || 'C'}</Text>
           </LinearGradient>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <Text style={styles.jobTitle} numberOfLines={1}>{item.title}</Text>
-            <Text style={styles.jobCompany} numberOfLines={1}>{item.company}</Text>
+            <Text style={styles.jobCompany} numberOfLines={1}>{companyName}</Text>
           </View>
-          <TouchableOpacity onPress={() => toggleSaveJob(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name={savedJobs.includes(item.id) ? 'bookmark' : 'bookmark-outline'} size={20}
-              color={savedJobs.includes(item.id) ? colors.primary : colors.textMuted} />
+          <TouchableOpacity onPress={() => toggleSave(item.id || item._id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name={savedIds.includes(item.id || item._id) ? 'bookmark' : 'bookmark-outline'} size={20}
+              color={savedIds.includes(item.id || item._id) ? colors.primary : colors.textMuted} />
           </TouchableOpacity>
         </View>
         <View style={styles.jobTags}>
-          {item.match_score ? (
-            <Badge label={`${item.match_score}% Match`} variant={item.match_score >= 80 ? 'success' : item.match_score >= 60 ? 'warning' : 'default'} size="sm" animated />
-          ) : <Badge label="New" variant="info" size="sm" />}
+          <Badge label="New" variant="info" size="sm" />
           {item.location && <Badge label={item.location} variant="default" size="sm" />}
-          {item.posted_at && <Badge label={timeAgo(item.posted_at)} variant="default" size="sm" />}
+          {item.created_at && <Badge label={timeAgo(item.created_at)} variant="default" size="sm" />}
         </View>
         <Text style={styles.jobDesc} numberOfLines={2}>{item.description}</Text>
         <View style={styles.jobFooter}>
           <View style={styles.jobSkills}>
-            {item.skills?.slice(0, 3).map((s, i) => (
-              <View key={i} style={styles.skillChip}>
-                <Text style={styles.skillChipText}>{s}</Text>
+            {item.platform && (
+              <View style={styles.skillChip}>
+                <Text style={styles.skillChipText}>{item.platform}</Text>
               </View>
-            ))}
-            {item.skills && item.skills.length > 3 && (
-              <Text style={styles.moreSkills}>+{item.skills.length - 3}</Text>
+            )}
+            {item.skills?.length > 0 && (
+              <View style={styles.skillChip}>
+                <Text style={styles.skillChipText}>{item.description?.substring(0, 80)}</Text>
+              </View>
             )}
           </View>
-          {item.salary_min && (
+          {(item.salary_min || item.salary_max) && (
             <Text style={styles.jobSalary}>{formatSalary(item.salary_min, item.salary_max, item.currency)}</Text>
           )}
         </View>
       </Card>
     </Animated.View>
-  ), [savedJobs, toggleSaveJob]);
+  )}, [savedIds, toggleSave]);
 
   if (loading) {
     return (
@@ -734,7 +739,7 @@ export default function DashboardScreen() {
       <FlatList
         data={jobs}
         renderItem={renderJob}
-        keyExtractor={(item: Job) => item.id}
+        keyExtractor={(item: Job) => item.id || item._id}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={{ paddingBottom: getTabListBottomPadding() + spacing.md }}
         showsVerticalScrollIndicator={false}
@@ -765,29 +770,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
   },
   greeting: {
-    fontSize: 32, fontWeight: '300', color: colors.text, lineHeight: 38,
+    fontSize: fs(32), fontWeight: '300', color: colors.text, lineHeight: fs(38),
   },
   userName: { fontWeight: '800', color: colors.text },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  dateText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
+  dateText: { fontSize: fs(13), color: colors.textMuted, fontWeight: '500' },
   avatarOuter: {
-    width: 54, height: 54, borderRadius: 27,
+    width: rs(54), height: rs(54), borderRadius: rs(27),
     justifyContent: 'center', alignItems: 'center',
   },
   avatarGlow: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 27,
+    borderRadius: rs(27),
     backgroundColor: colors.primary,
     opacity: 0.2,
   },
   avatarGradient: {
-    width: 48, height: 48, borderRadius: 24,
+    width: rs(48), height: rs(48), borderRadius: rs(24),
     justifyContent: 'center', alignItems: 'center',
     ...shadow.glow.primary,
   },
-  avatarText: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  avatarText: { color: '#FFFFFF', fontSize: fs(20), fontWeight: '700' },
   onlineDot: {
-    position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6,
+    position: 'absolute', bottom: 2, right: 2, width: rs(12), height: rs(12), borderRadius: rs(6),
     backgroundColor: colors.success, borderWidth: 2, borderColor: colors.surface,
   },
   profileSummaryCard: {
@@ -803,25 +808,25 @@ const styles = StyleSheet.create({
   },
   planBadgeInner: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5,
+    paddingHorizontal: rs(10), paddingVertical: rs(5),
   },
   planBadgeText: {
-    color: '#FFFFFF', fontSize: 10, fontWeight: '800', letterSpacing: 0.6,
+    color: '#FFFFFF', fontSize: fs(10), fontWeight: '800', letterSpacing: 0.6,
   },
   profileSummaryLabel: {
-    fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginBottom: 4,
+    fontSize: fs(12), color: colors.textSecondary, fontWeight: '500', marginBottom: 4,
   },
   profileMiniBar: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
   },
   profileMiniBarBg: {
-    flex: 1, height: 6, backgroundColor: colors.borderLight, borderRadius: 3, overflow: 'hidden',
+    flex: 1, height: rs(6), backgroundColor: colors.borderLight, borderRadius: rs(3), overflow: 'hidden',
   },
   profileMiniBarFill: {
-    height: 6, borderRadius: 3, backgroundColor: colors.primary,
+    height: rs(6), borderRadius: rs(3), backgroundColor: colors.primary,
   },
   profileMiniPct: {
-    fontSize: 13, fontWeight: '700', color: colors.primary, fontVariant: ['tabular-nums'],
+    fontSize: fs(13), fontWeight: '700', color: colors.primary, fontVariant: ['tabular-nums'],
   },
   content: {
     gap: spacing.md,
@@ -830,11 +835,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   sectionTitle: {
-    fontSize: 20, fontWeight: '700', color: colors.text,
+    fontSize: fs(20), fontWeight: '700', color: colors.text,
     marginBottom: spacing.sm, letterSpacing: -0.3,
   },
   sectionCount: {
-    fontSize: 14, fontWeight: '500', color: colors.textMuted,
+    fontSize: fs(14), fontWeight: '500', color: colors.textMuted,
   },
   horizontalListContent: {
     paddingRight: spacing.lg, gap: spacing.sm,
@@ -844,56 +849,56 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   statCard: {
-    width: '47%', flexGrow: 1, minWidth: 140,
+    width: '47%', flexGrow: 1, minWidth: rs(140),
     backgroundColor: colors.surface, borderRadius: borderRadius.xl,
     padding: spacing.md, ...shadow.md,
   },
   statIconBg: {
-    width: 36, height: 36, borderRadius: 10,
+    width: rs(36), height: rs(36), borderRadius: rs(10),
     justifyContent: 'center', alignItems: 'center',
     marginBottom: spacing.sm,
     ...shadow.sm,
   },
   statValue: {
-    fontSize: 26, fontWeight: '800', color: colors.text,
+    fontSize: fs(26), fontWeight: '800', color: colors.text,
     fontVariant: ['tabular-nums'],
   },
   statLabel: {
-    fontSize: 12, color: colors.textMuted, fontWeight: '500', marginTop: 2,
+    fontSize: fs(12), color: colors.textMuted, fontWeight: '500', marginTop: 2,
   },
   recentJobCard: {
     padding: spacing.md,
-    width: 160, marginRight: spacing.sm,
+    width: rs(160), marginRight: spacing.sm,
   },
   recentJobIcon: {
-    width: 40, height: 40, borderRadius: 10,
+    width: rs(40), height: rs(40), borderRadius: rs(10),
     justifyContent: 'center', alignItems: 'center',
     marginBottom: spacing.sm,
   },
-  recentJobIconText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  recentJobIconText: { color: '#FFFFFF', fontSize: fs(18), fontWeight: '700' },
   recentJobTitle: {
-    fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 2,
+    fontSize: fs(14), fontWeight: '600', color: colors.text, marginBottom: 2,
   },
   recentJobCompany: {
-    fontSize: 12, color: colors.textSecondary,
+    fontSize: fs(12), color: colors.textSecondary,
   },
   recentJobSalary: {
-    fontSize: 12, fontWeight: '600', color: colors.success, marginTop: 4,
+    fontSize: fs(12), fontWeight: '600', color: colors.success, marginTop: 4,
   },
   companyCard: {
     padding: spacing.md,
-    width: 140, marginRight: spacing.sm,
+    width: rs(140), marginRight: spacing.sm,
     alignItems: 'center',
   },
   companyIconRound: {
-    width: 44, height: 44, borderRadius: 22,
+    width: rs(44), height: rs(44), borderRadius: rs(22),
     justifyContent: 'center', alignItems: 'center',
     marginBottom: spacing.sm,
     ...shadow.sm,
   },
-  companyIconText: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  companyIconText: { color: '#FFFFFF', fontSize: fs(20), fontWeight: '700' },
   companyName: {
-    fontSize: 13, fontWeight: '600', color: colors.text,
+    fontSize: fs(13), fontWeight: '600', color: colors.text,
     textAlign: 'center', marginBottom: 6,
   },
   categoriesContent: {
@@ -901,41 +906,41 @@ const styles = StyleSheet.create({
   },
   categoryChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 10,
+    paddingHorizontal: rs(14), paddingVertical: rs(10),
     borderRadius: borderRadius.full,
     overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
   categoryDot: {
-    width: 8, height: 8, borderRadius: 4,
+    width: rs(8), height: rs(8), borderRadius: rs(4),
   },
   categoryText: {
-    fontSize: 13, fontWeight: '600',
+    fontSize: fs(13), fontWeight: '600',
   },
   interviewCard: {
     padding: spacing.md,
-    width: 200, marginRight: spacing.sm,
+    width: rs(200), marginRight: spacing.sm,
   },
   interviewCardTop: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: spacing.sm,
   },
   interviewIcon: {
-    width: 36, height: 36, borderRadius: 10,
+    width: rs(36), height: rs(36), borderRadius: rs(10),
     justifyContent: 'center', alignItems: 'center',
   },
   interviewTitle: {
-    fontSize: 15, fontWeight: '600', color: colors.text, marginBottom: 2,
+    fontSize: fs(15), fontWeight: '600', color: colors.text, marginBottom: 2,
   },
   interviewCompany: {
-    fontSize: 12, color: colors.textSecondary,
+    fontSize: fs(12), color: colors.textSecondary,
   },
   interviewDateRow: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     marginTop: spacing.sm,
   },
   interviewDate: {
-    fontSize: 11, color: colors.textMuted, fontWeight: '500',
+    fontSize: fs(11), color: colors.textMuted, fontWeight: '500',
   },
   resumeScoreCard: {
     padding: spacing.md,
@@ -944,13 +949,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   resumeScoreTitle: {
-    fontSize: 16, fontWeight: '700', color: colors.text,
+    fontSize: fs(16), fontWeight: '700', color: colors.text,
   },
   resumeScoreLabel: {
-    fontSize: 14, fontWeight: '600', marginTop: 2,
+    fontSize: fs(14), fontWeight: '600', marginTop: 2,
   },
   resumeScoreDesc: {
-    fontSize: 12, color: colors.textSecondary, marginTop: 2,
+    fontSize: fs(12), color: colors.textSecondary, marginTop: 2,
   },
   profileCompletionCard: {
     padding: spacing.md,
@@ -963,20 +968,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
   },
   profileCompletionIcon: {
-    width: 32, height: 32, borderRadius: 8,
+    width: rs(32), height: rs(32), borderRadius: rs(8),
     justifyContent: 'center', alignItems: 'center',
   },
   profileCompletionTitle: {
-    fontSize: 15, fontWeight: '600', color: colors.text,
+    fontSize: fs(15), fontWeight: '600', color: colors.text,
   },
   profileCompletionPct: {
-    fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'],
+    fontSize: fs(18), fontWeight: '800', fontVariant: ['tabular-nums'],
   },
   profileCompletionBarBg: {
-    height: 8, backgroundColor: colors.borderLight, borderRadius: 4, overflow: 'hidden',
+    height: rs(8), backgroundColor: colors.borderLight, borderRadius: rs(4), overflow: 'hidden',
   },
   profileCompletionBarFill: {
-    height: 8, borderRadius: 4,
+    height: rs(8), borderRadius: rs(4),
   },
   profileCompletionSteps: {
     flexDirection: 'row', alignItems: 'center',
@@ -984,14 +989,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   stepDot: {
-    width: 8, height: 8, borderRadius: 4,
+    width: rs(8), height: rs(8), borderRadius: rs(4),
     backgroundColor: colors.borderLight,
   },
   stepDotActive: {
     backgroundColor: colors.primary,
   },
   stepLine: {
-    width: 24, height: 2, borderRadius: 1,
+    width: rs(24), height: 2, borderRadius: 1,
     backgroundColor: colors.borderLight,
   },
   stepLineActive: {
@@ -1005,7 +1010,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   notifDot: {
-    width: 8, height: 8, borderRadius: 4,
+    width: rs(8), height: rs(8), borderRadius: rs(4),
     backgroundColor: 'transparent',
     marginRight: spacing.xs,
   },
@@ -1013,18 +1018,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   notifIconWrap: {
-    width: 32, height: 32, borderRadius: 8,
+    width: rs(32), height: rs(32), borderRadius: rs(8),
     justifyContent: 'center', alignItems: 'center',
     backgroundColor: colors.surfaceLight,
   },
   notifTitle: {
-    fontSize: 13, fontWeight: '600', color: colors.text,
+    fontSize: fs(13), fontWeight: '600', color: colors.text,
   },
   notifBody: {
-    fontSize: 12, color: colors.textSecondary, marginTop: 1,
+    fontSize: fs(12), color: colors.textSecondary, marginTop: 1,
   },
   notifTime: {
-    fontSize: 10, color: colors.textMuted, fontWeight: '500',
+    fontSize: fs(10), color: colors.textMuted, fontWeight: '500',
     marginLeft: spacing.sm,
   },
   aiTipCard: {
@@ -1034,15 +1039,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   aiTipIconBg: {
-    width: 44, height: 44, borderRadius: 14,
+    width: rs(44), height: rs(44), borderRadius: rs(14),
     justifyContent: 'center', alignItems: 'center',
     ...shadow.glow.purple,
   },
   aiTipTitle: {
-    fontSize: 14, fontWeight: '600', color: colors.text,
+    fontSize: fs(14), fontWeight: '600', color: colors.text,
   },
   aiTipBody: {
-    fontSize: 13, color: colors.textSecondary, lineHeight: 18, marginTop: 2,
+    fontSize: fs(13), color: colors.textSecondary, lineHeight: fs(18), marginTop: 2,
   },
   jobCard: {
     marginBottom: spacing.md,
@@ -1051,18 +1056,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   jobIcon: {
-    width: 42, height: 42, borderRadius: 12,
+    width: rs(42), height: rs(42), borderRadius: rs(12),
     justifyContent: 'center', alignItems: 'center',
   },
-  jobIconText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
-  jobTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
-  jobCompany: { fontSize: 13, color: colors.textSecondary, marginTop: 1 },
+  jobIconText: { color: '#FFFFFF', fontSize: fs(18), fontWeight: '700' },
+  jobTitle: { fontSize: fs(16), fontWeight: '600', color: colors.text },
+  jobCompany: { fontSize: fs(13), color: colors.textSecondary, marginTop: 1 },
   jobTags: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm, flexWrap: 'wrap' },
-  jobDesc: { fontSize: 13, color: colors.textSecondary, lineHeight: 18, marginTop: spacing.sm },
+  jobDesc: { fontSize: fs(13), color: colors.textSecondary, lineHeight: fs(18), marginTop: spacing.sm },
   jobFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md },
   jobSkills: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', flex: 1, flexWrap: 'wrap' },
-  skillChip: { paddingHorizontal: 8, paddingVertical: 3, backgroundColor: colors.primaryBg, borderRadius: borderRadius.sm },
-  skillChipText: { fontSize: 11, fontWeight: '500', color: colors.primary },
-  moreSkills: { fontSize: 12, color: colors.textMuted },
-  jobSalary: { fontSize: 13, fontWeight: '600', color: colors.success },
+  skillChip: { paddingHorizontal: rs(8), paddingVertical: rs(3), backgroundColor: colors.primaryBg, borderRadius: borderRadius.sm },
+  skillChipText: { fontSize: fs(11), fontWeight: '500', color: colors.primary },
+  moreSkills: { fontSize: fs(12), color: colors.textMuted },
+  jobSalary: { fontSize: fs(14), fontWeight: '700', color: colors.success, marginTop: 4 },
 });

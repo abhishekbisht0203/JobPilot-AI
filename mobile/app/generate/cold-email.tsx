@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Button } from '../../components/ui/Button';
 import { Loader } from '../../components/ui/Loader';
-import { emailApi } from '../../lib/api';
+import { coverLetterApi } from '../../lib/api';
 
 export default function ColdEmailScreen() {
   const insets = useSafeAreaInsets();
@@ -25,7 +25,7 @@ export default function ColdEmailScreen() {
     if (!company || !jobTitle) return;
     setLoading(true);
     try {
-      const res = await emailApi.generate({ company, job_title: jobTitle, recruiter_name: recruiterName || undefined });
+      const res = await coverLetterApi.generate({ job_description: '', company, job_title: jobTitle });
       const data = res.data.data || res.data;
       setResult({ subject: data.subject || '', body: data.body || '' });
       setError(null);

@@ -19,7 +19,7 @@ import { Button } from '../../components/ui/Button';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
 import { useAuthStore } from '../../store';
-import { subscriptionsApi } from '../../lib/api';
+import { subscriptionApi } from '../../lib/api';
 
 interface PlanFeature {
   name: string;
@@ -300,7 +300,7 @@ export default function PricingScreen() {
     }
     setProcessing(plan.id);
     try {
-      await subscriptionsApi.subscribe(plan.id, yearly ? 'yearly' : 'monthly');
+      await subscriptionApi.create({ plan_id: plan.id, interval: yearly ? 'yearly' : 'monthly' });
     } catch {} finally {
       setProcessing(null);
     }

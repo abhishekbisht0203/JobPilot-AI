@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
-  FadeInDown, FadeInUp, useSharedValue, withSpring, withTiming, useAnimatedStyle, Easing,
+  FadeInDown, FadeInUp, useSharedValue, withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
@@ -17,22 +17,20 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Loader } from '../../components/ui/Loader';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
-import { applicationsApi } from '../../lib/api';
+import { applicationApi } from '../../lib/api';
 import { Application } from '../../types';
-import { formatDate } from '../../lib/helpers';
+import { formatDate, formatSalary, formatSalaryFromString } from '../../lib/helpers';
 
-const STATUS_TABS = ['all', 'saved', 'applied', 'interviewing', 'offer', 'rejected'] as const;
+const STATUS_TABS = ['all', 'pending', 'accepted', 'rejected'] as const;
 type StatusTab = (typeof STATUS_TABS)[number];
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  saved: { label: 'Saved', color: colors.info, icon: 'bookmark-outline' },
-  applied: { label: 'Applied', color: colors.primary, icon: 'send-outline' },
-  interviewing: { label: 'Interviewing', color: colors.warning, icon: 'chatbubbles-outline' },
-  offer: { label: 'Offer', color: colors.success, icon: 'trophy-outline' },
+  pending: { label: 'Pending', color: colors.warning, icon: 'time-outline' },
+  accepted: { label: 'Accepted', color: colors.success, icon: 'checkmark-circle-outline' },
   rejected: { label: 'Rejected', color: colors.error, icon: 'close-circle-outline' },
 };
 
-const STATS_KEYS = ['saved', 'applied', 'interviewing', 'offer', 'rejected'] as const;
+const STATS_KEYS = ['pending', 'accepted', 'rejected'] as const;
 
 function StatusPill({ tab, active, onPress }: { tab: StatusTab; active: boolean; onPress: () => void }) {
   const scale = useSharedValue(1);
@@ -46,10 +44,10 @@ function StatusPill({ tab, active, onPress }: { tab: StatusTab; active: boolean;
       <Animated.View style={[{ transform: [{ scale }] }]}>
         <View style={[styles.tab, active && styles.tabActive]}>
           {tab !== 'all' && (
-            <Ionicons name={STATUS_CONFIG[tab].icon} size={12} color={active ? colors.white : STATUS_CONFIG[tab].color} style={{ marginRight: 4 }} />
+            <Ionicons name={STATUS_CONFIG[tab]?.icon || 'ellipse'} size={12} color={active ? colors.white : colors.textSecondary} style={{ marginRight: 4 }} />
           )}
           <Text style={[styles.tabText, active && styles.tabTextActive]}>
-            {tab === 'all' ? 'All' : STATUS_CONFIG[tab].label}
+            {tab === 'all' ? 'All' : (STATUS_CONFIG[tab]?.label || tab)}
           </Text>
         </View>
       </Animated.View>
@@ -62,19 +60,14 @@ export default function ApplicationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<StatusTab>('all');
-  const [stats, setStats] = useState<Record<string, number>>({});
   const [fetchError, setFetchError] = useState<string | null>(null);
   const { horizontalPadding } = useResponsive();
   const insets = useSafeAreaInsets();
 
   const fetchData = useCallback(async () => {
     try {
-      const [appsRes, statsRes] = await Promise.all([
-        applicationsApi.list(),
-        applicationsApi.getStats(),
-      ]);
-      setApplications(appsRes.data.data || []);
-      setStats(statsRes.data.data || {});
+      const res = await applicationApi.list();
+      setApplications(res.data.data || []);
       setFetchError(null);
     } catch {
       setFetchError('Unable to load applications. Check your connection.');
@@ -90,63 +83,48 @@ export default function ApplicationsScreen() {
     ? applications
     : applications.filter((a) => a.status === activeTab);
 
+  const stats = {
+    pending: applications.filter((a) => a.status === 'pending').length,
+    accepted: applications.filter((a) => a.status === 'accepted').length,
+    rejected: applications.filter((a) => a.status === 'rejected').length,
+  };
+
   const renderApp = ({ item, index }: { item: Application; index: number }) => {
-    const config = STATUS_CONFIG[item.status] || STATUS_CONFIG.saved;
+    const jobTitle = typeof item.job === 'object' ? item.job?.title : 'Unknown Position';
+    const companyName = typeof item.job === 'object'
+      ? (item.job?.company)
+      : 'Unknown Company';
+    const jobSalaryMin = typeof item.job === 'object' ? item.job?.salary_min : undefined;
+    const jobSalaryMax = typeof item.job === 'object' ? item.job?.salary_max : undefined;
+    const jobCurrency = typeof item.job === 'object' ? item.job?.currency : undefined;
+    const iconColors = item.status === 'rejected' ? colors.gradient.error : colors.gradient.success;
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).springify().damping(14)}>
-        <Card style={styles.appCard} glowColor={config.color}>
+        <Card style={styles.appCard}>
           <View style={styles.appHeader}>
-            <LinearGradient
-              colors={item.status === 'offer' ? colors.gradient.success :
-                      item.status === 'rejected' ? colors.gradient.error :
-                      colors.gradient.blue}
-              style={styles.appIcon}
-            >
-              <Ionicons name={config.icon} size={16} color="#FFFFFF" />
+            <LinearGradient colors={iconColors} style={styles.appIcon}>
+              <Ionicons name="document-text" size={16} color="#FFFFFF" />
             </LinearGradient>
             <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Text style={styles.appTitle} numberOfLines={1}>{item.job?.title || 'Unknown Position'}</Text>
-              <Text style={styles.appCompany} numberOfLines={1}>{item.job?.company || 'Unknown Company'}</Text>
+              <Text style={styles.appTitle} numberOfLines={1}>{jobTitle}</Text>
+              <Text style={styles.appCompany} numberOfLines={1}>{companyName}</Text>
             </View>
-            <Badge label={config.label} variant={item.status as any} size="sm" animated />
+            <Badge label={item.status} variant={item.status as any} size="sm" animated />
           </View>
 
           <View style={styles.appMeta}>
             <View style={styles.metaItem}>
               <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
-              <Text style={styles.metaText}>Applied {item.applied_at ? formatDate(item.applied_at) : '\u2014'}</Text>
+              <Text style={styles.metaText}>Applied {item.created_at ? formatDate(item.created_at) : '\u2014'}</Text>
             </View>
-            {item.job?.salary_min && (
+            {(jobSalaryMin || jobSalaryMax) && (
               <View style={styles.metaItem}>
                 <Ionicons name="cash-outline" size={13} color={colors.textSecondary} />
-                <Text style={styles.metaText}>
-                  {item.job.currency || '$'}{item.job.salary_min}K{item.job.salary_max ? ` - ${item.job.currency || '$'}${item.job.salary_max}K` : ''}
-                </Text>
+                <Text style={styles.metaText}>{formatSalary(jobSalaryMin, jobSalaryMax, jobCurrency)}</Text>
               </View>
             )}
           </View>
-
-          {item.notes && (
-            <Text style={styles.appNotes} numberOfLines={2}>{item.notes}</Text>
-          )}
-
-          {item.follow_up_at && (
-            <View style={styles.followUp}>
-              <Ionicons name="alarm-outline" size={13} color={colors.warning} />
-              <Text style={styles.followUpText}>Follow up: {formatDate(item.follow_up_at)}</Text>
-            </View>
-          )}
-
-          {item.job?.skills && item.job.skills.length > 0 && (
-            <View style={styles.skillsRow}>
-              {item.job.skills.slice(0, 3).map((skill, idx) => (
-                <View key={idx} style={styles.skillChip}>
-                  <Text style={styles.skillChipText}>{skill}</Text>
-                </View>
-              ))}
-            </View>
-          )}
         </Card>
       </Animated.View>
     );
@@ -157,7 +135,7 @@ export default function ApplicationsScreen() {
       <FlatList
         data={filtered}
         renderItem={renderApp}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id || item._id}
         contentContainerStyle={{
           paddingTop: insets.top + 12,
           paddingBottom: getTabListBottomPadding(),
@@ -189,8 +167,8 @@ export default function ApplicationsScreen() {
                     const count = stats[key] || 0;
                     return (
                       <View key={key} style={styles.statItem}>
-                        <AnimatedCounter value={count} style={[styles.statValue, { color: config.color }]} spring />
-                        <Text style={styles.statLabel}>{config.label}</Text>
+                        <AnimatedCounter value={count} style={[styles.statValue, { color: config?.color || colors.textMuted }]} spring />
+                        <Text style={styles.statLabel}>{config?.label || key}</Text>
                       </View>
                     );
                   })}
@@ -265,16 +243,4 @@ const styles = StyleSheet.create({
   appMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm, flexWrap: 'wrap' },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   metaText: { color: colors.textMuted, fontSize: 12 },
-  appNotes: { color: colors.textSecondary, fontSize: 13, marginTop: spacing.sm, lineHeight: 18 },
-  followUp: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm,
-    paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.borderLight,
-  },
-  followUpText: { color: colors.warning, fontSize: 12 },
-  skillsRow: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm, flexWrap: 'wrap' },
-  skillChip: {
-    paddingHorizontal: 8, paddingVertical: 3,
-    backgroundColor: colors.primaryBg, borderRadius: borderRadius.sm,
-  },
-  skillChipText: { fontSize: 11, fontWeight: '500', color: colors.primary },
 });

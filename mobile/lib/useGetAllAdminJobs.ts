@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useJobStore } from '../store';
-import { jobsApi } from './api';
+import { jobApi } from './api';
 import { Job } from '../types';
 
 interface UseGetAllAdminJobsResult {
@@ -19,7 +19,7 @@ export function useGetAllAdminJobs(): UseGetAllAdminJobsResult {
     try {
       setLoading(true);
       setError(null);
-      const res = await jobsApi.getAdminJobs();
+      const res = await jobApi.list();
       const data = res.data;
       const jobs: Job[] = data.data || data.jobs || data || [];
       setAllAdminJobs(jobs);

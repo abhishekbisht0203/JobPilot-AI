@@ -17,13 +17,16 @@ router = APIRouter()
 
 _oauth_states: dict[str, str] = {}
 
+
 def _generate_state() -> str:
     state = secrets.token_urlsafe(32)
     _oauth_states[state] = ""
     return state
 
+
 def _consume_state(state: str) -> bool:
     return _oauth_states.pop(state, None) is not None
+
 
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -32,11 +35,69 @@ GITHUB_ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token"
 GITHUB_USER_URL = "https://api.github.com/user"
 GITHUB_EMAIL_URL = "https://api.github.com/user/emails"
 
-def _doc_to_user(doc: dict) -> dict:
-    doc["id"] = str(doc.pop("_id"))
-    return doc
 
-@router.post("/register", response_model=AuthResponse)
+def _normalize_user(doc: dict) -> dict:
+    user = dict(doc)
+    uid = str(user.pop("_id"))
+    user["id"] = uid
+    user["_id"] = uid
+
+    if "fullname" in user and "name" not in user:
+        user["name"] = user["fullname"]
+    if "name" in user and "fullname" not in user:
+        user["fullname"] = user["name"]
+
+    pw = user.get("password_hash") or user.get("password") or user.get("hashed_password")
+    if pw:
+        user["password_hash"] = pw
+
+    profile = user.get("profile")
+    if isinstance(profile, dict):
+        if profile.get("profilePhoto") and not user.get("avatar_url"):
+            user["avatar_url"] = profile["profilePhoto"]
+
+    user.setdefault("plan_tier", "free")
+    user.setdefault("daily_usage_count", 0)
+    user.setdefault("phoneNumber", "")
+    user.setdefault("roles", {"jobSeeker": True, "recruiter": False})
+    user.setdefault("currentRole", "jobSeeker")
+    user.setdefault("profileCompleted", False)
+
+    return user
+
+
+def _make_user_doc(name: str, email: str, password_hash: str | None, now: datetime, **extra) -> dict:
+    return {
+        "fullname": name,
+        "name": name,
+        "email": email,
+        "phoneNumber": extra.get("phoneNumber", ""),
+        "password": password_hash,
+        "password_hash": password_hash,
+        "profile": {
+            "bio": "", "headline": "", "skills": [],
+            "resume": None, "resumeOriginalName": None,
+            "profilePhoto": extra.get("avatar_url"),
+            "dateOfBirth": None, "gender": "", "location": "",
+            "website": "", "linkedin": "", "github": "", "portfolio": "",
+            "preferredJobRole": "", "preferredSalary": "",
+            "employmentType": "", "workPreference": "", "certifications": "",
+            "experience": "[]", "education": "[]",
+        },
+        "roles": {"jobSeeker": True, "recruiter": False},
+        "currentRole": "jobSeeker",
+        "profileCompleted": False,
+        "plan_tier": PlanTier.FREE.value,
+        "daily_usage_count": 0,
+        "usage_reset_at": now,
+        "is_active": 1,
+        "created_at": now,
+        "updated_at": now,
+        **extra,
+    }
+
+
+@router.post("/register")
 async def register(req: RegisterRequest):
     db = get_db()
     existing = await db.users.find_one({"email": req.email})
@@ -44,42 +105,36 @@ async def register(req: RegisterRequest):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     now = datetime.now(timezone.utc)
-    user = {
-        "email": req.email,
-        "password_hash": get_password_hash(req.password),
-        "name": req.name,
-        "avatar_url": None,
-        "plan_tier": PlanTier.FREE.value,
-        "daily_usage_count": 0,
-        "usage_reset_at": now,
-        "google_id": None,
-        "github_id": None,
-        "is_active": 1,
-        "created_at": now,
-        "updated_at": now,
-    }
+    hashed = get_password_hash(req.password)
+    user = _make_user_doc(req.name, req.email, hashed, now, phoneNumber=req.phoneNumber or "")
     result = await db.users.insert_one(user)
     user["id"] = str(result.inserted_id)
+    user["_id"] = user["id"]
 
     token = create_access_token({"sub": user["id"]})
-    return AuthResponse(
-        user=UserResponse.model_validate(user),
-        token=token,
-    )
+    return AuthResponse(success=True, user=UserResponse.model_validate(user), token=token)
 
-@router.post("/login", response_model=AuthResponse)
+
+@router.post("/login")
 async def login(req: LoginRequest):
     db = get_db()
     user = await db.users.find_one({"email": req.email})
-    if not user or not user.get("password_hash") or not verify_password(req.password, user["password_hash"]):
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    user["id"] = str(user.pop("_id"))
+    stored = user.get("password_hash") or user.get("password") or user.get("hashed_password")
+    if not stored or not verify_password(req.password, stored):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    user = _normalize_user(user)
     token = create_access_token({"sub": user["id"]})
-    return AuthResponse(
-        user=UserResponse.model_validate(user),
-        token=token,
-    )
+    return AuthResponse(success=True, user=UserResponse.model_validate(user), token=token)
+
+
+@router.post("/logout")
+async def logout(user: dict = Depends(get_current_user)):
+    return {"success": True, "message": "Logged out successfully"}
+
 
 @router.get("/google/url")
 async def google_oauth_url():
@@ -96,7 +151,8 @@ async def google_oauth_url():
     )
     return {"url": url}
 
-@router.post("/google", response_model=AuthResponse)
+
+@router.post("/google")
 async def google_auth(req: GoogleAuthRequest):
     if req.code and req.state:
         if not _consume_state(req.state):
@@ -105,6 +161,7 @@ async def google_auth(req: GoogleAuthRequest):
     if req.id_token:
         return await _google_id_token_flow(req.id_token)
     raise HTTPException(status_code=400, detail="Provide either id_token or code+state")
+
 
 async def _google_id_token_flow(id_token: str) -> AuthResponse:
     async with httpx.AsyncClient() as client:
@@ -115,6 +172,7 @@ async def _google_id_token_flow(id_token: str) -> AuthResponse:
     if payload.get("aud") != settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=401, detail="Token audience mismatch")
     return await _upsert_google_user(payload)
+
 
 async def _google_code_flow(code: str) -> AuthResponse:
     async with httpx.AsyncClient() as client:
@@ -144,10 +202,11 @@ async def _google_code_flow(code: str) -> AuthResponse:
         payload = userinfo_resp.json()
     return await _upsert_google_user(payload)
 
+
 async def _upsert_google_user(payload: dict) -> AuthResponse:
     db = get_db()
     email = payload.get("email", "")
-    name = payload.get("name", "Google User")
+    google_name = payload.get("name", "Google User")
     google_id = str(payload.get("id") or payload.get("sub", ""))
     picture = payload.get("picture", "")
 
@@ -160,33 +219,25 @@ async def _upsert_google_user(payload: dict) -> AuthResponse:
         if existing:
             await db.users.update_one(
                 {"_id": existing["_id"]},
-                {"$set": {"google_id": google_id, "avatar_url": existing.get("avatar_url") or picture}}
+                {"$set": {
+                    "google_id": google_id,
+                    "profile.profilePhoto": existing.get("profile", {}).get("profilePhoto") or picture,
+                    "avatar_url": existing.get("avatar_url") or picture,
+                }}
             )
             user = await db.users.find_one({"_id": existing["_id"]})
         else:
             now = datetime.now(timezone.utc)
-            doc = {
-                "email": email or f"google_{google_id}@placeholder.local",
-                "password_hash": None,
-                "name": name,
-                "avatar_url": picture or None,
-                "plan_tier": PlanTier.FREE.value,
-                "daily_usage_count": 0,
-                "usage_reset_at": now,
-                "google_id": google_id,
-                "github_id": None,
-                "is_active": 1,
-                "created_at": now,
-                "updated_at": now,
-            }
+            doc = _make_user_doc(google_name, email or f"google_{google_id}@placeholder.local", None, now,
+                                 avatar_url=picture or None, google_id=google_id, github_id=None)
             result = await db.users.insert_one(doc)
             user = doc
             user["_id"] = result.inserted_id
 
-    user_id = str(user["_id"])
-    token = create_access_token({"sub": user_id})
-    user["id"] = user_id
-    return AuthResponse(user=UserResponse.model_validate(user), token=token)
+    user = _normalize_user(user)
+    token = create_access_token({"sub": user["id"]})
+    return AuthResponse(success=True, user=UserResponse.model_validate(user), token=token)
+
 
 @router.get("/github/url")
 async def github_oauth_url():
@@ -202,7 +253,8 @@ async def github_oauth_url():
     )
     return {"url": url}
 
-@router.post("/github", response_model=AuthResponse)
+
+@router.post("/github")
 async def github_auth(req: GitHubAuthRequest):
     if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="GitHub OAuth not configured")
@@ -238,7 +290,7 @@ async def github_auth(req: GitHubAuthRequest):
         primary_email = next((e["email"] for e in emails if e.get("primary")), user_data.get("email", ""))
 
     github_id = str(user_data["id"])
-    name = user_data.get("name") or user_data.get("login", "GitHub User")
+    github_name = user_data.get("name") or user_data.get("login", "GitHub User")
     avatar_url = user_data.get("avatar_url", "")
 
     db = get_db()
@@ -248,33 +300,25 @@ async def github_auth(req: GitHubAuthRequest):
         if existing:
             await db.users.update_one(
                 {"_id": existing["_id"]},
-                {"$set": {"github_id": github_id, "avatar_url": existing.get("avatar_url") or avatar_url}}
+                {"$set": {
+                    "github_id": github_id,
+                    "profile.profilePhoto": existing.get("profile", {}).get("profilePhoto") or avatar_url,
+                    "avatar_url": existing.get("avatar_url") or avatar_url,
+                }}
             )
             user = await db.users.find_one({"_id": existing["_id"]})
         else:
             now = datetime.now(timezone.utc)
-            doc = {
-                "email": primary_email or f"github_{github_id}@placeholder.local",
-                "password_hash": None,
-                "name": name,
-                "avatar_url": avatar_url or None,
-                "plan_tier": PlanTier.FREE.value,
-                "daily_usage_count": 0,
-                "usage_reset_at": now,
-                "google_id": None,
-                "github_id": github_id,
-                "is_active": 1,
-                "created_at": now,
-                "updated_at": now,
-            }
+            doc = _make_user_doc(github_name, primary_email or f"github_{github_id}@placeholder.local", None, now,
+                                 avatar_url=avatar_url or None, github_id=github_id, google_id=None)
             result = await db.users.insert_one(doc)
             user = doc
             user["_id"] = result.inserted_id
 
-    user_id = str(user["_id"])
-    token = create_access_token({"sub": user_id})
-    user["id"] = user_id
-    return AuthResponse(user=UserResponse.model_validate(user), token=token)
+    user = _normalize_user(user)
+    token = create_access_token({"sub": user["id"]})
+    return AuthResponse(success=True, user=UserResponse.model_validate(user), token=token)
+
 
 @router.post("/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest):
@@ -284,6 +328,7 @@ async def forgot_password(req: ForgotPasswordRequest):
         reset_token = create_access_token({"sub": str(user["_id"]), "type": "reset"}, expires_delta=timedelta(hours=1))
         print(f"Reset token for {req.email}: {reset_token}")
     return {"message": "If the email exists, a reset link has been sent"}
+
 
 @router.post("/reset-password")
 async def reset_password(req: ResetPasswordRequest):
@@ -300,13 +345,19 @@ async def reset_password(req: ResetPasswordRequest):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    hashed = get_password_hash(req.password)
     await db.users.update_one(
         {"_id": user["_id"]},
-        {"$set": {"password_hash": get_password_hash(req.password)}}
+        {"$set": {"password": hashed, "password_hash": hashed}}
     )
     return {"message": "Password reset successful"}
 
-@router.get("/profile", response_model=UserResponse)
+
+@router.get("/profile")
 async def get_profile(user: dict = Depends(get_current_user)):
-    user["id"] = str(user["_id"])
-    return UserResponse.model_validate(user)
+    db = get_db()
+    full_user = await db.users.find_one({"_id": user["_id"]})
+    if not full_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user = _normalize_user(full_user)
+    return AuthResponse(success=True, user=UserResponse.model_validate(user), token=None)

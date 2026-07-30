@@ -13,7 +13,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Loader } from '../../../components/ui/Loader';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { jobsApi } from '../../../lib/api';
+import { jobApi } from '../../../lib/api';
 import { Job } from '../../../types';
 import { formatSalary, timeAgo, getInitials } from '../../../lib/helpers';
 
@@ -56,7 +56,7 @@ export default function CompanyProfileScreen() {
 
   useEffect(() => {
     if (!decodedName) return;
-    jobsApi.list({ page: 1, per_page: 100 })
+    jobApi.list({ page: 1, per_page: 100 })
       .then((res) => setAllJobs(res.data.data || []))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -88,9 +88,9 @@ export default function CompanyProfileScreen() {
       name: decodedName,
       industry,
       description: firstDesc.length > 300 ? firstDesc.substring(0, 300) + '...' : firstDesc,
-      location: locations[0] || 'Remote',
+      locations: locations.length > 0 ? locations : ['Remote'],
       open_jobs_count: companyJobs.length,
-      tech_stack: allSkills,
+      skills: allSkills,
       hiring: true,
     };
   }, [companyJobs, decodedName]);
@@ -148,7 +148,7 @@ export default function CompanyProfileScreen() {
                 <View style={styles.heroMetaDot} />
                 <View style={styles.heroMetaItem}>
                   <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.8)" />
-                  <Text style={styles.heroMetaText}>{company.location}</Text>
+                  <Text style={styles.heroMetaText}>{company.locations?.[0] || ''}</Text>
                 </View>
               </View>
             </View>
@@ -179,7 +179,7 @@ export default function CompanyProfileScreen() {
                   <LinearGradient colors={colors.gradient.purple} style={styles.statIcon}>
                     <Ionicons name="pricetags" size={18} color="#FFF" />
                   </LinearGradient>
-                  <Text style={styles.statNumber}>{company.tech_stack.length}</Text>
+                  <Text style={styles.statNumber}>{company.skills.length}</Text>
                   <Text style={styles.statLabel}>Skills</Text>
                 </View>
               </View>
@@ -203,17 +203,17 @@ export default function CompanyProfileScreen() {
               <GlassCard style={styles.infoCard} glowColor={colors.secondary}>
                 <Ionicons name="location-outline" size={20} color={colors.secondary} />
                 <Text style={styles.infoLabel}>Location</Text>
-                <Text style={styles.infoValue}>{company.location}</Text>
+                <Text style={styles.infoValue}>{company.locations?.[0] || ''}</Text>
               </GlassCard>
             </View>
           </Animated.View>
 
-          {company.tech_stack.length > 0 && (
+          {company.skills.length > 0 && (
             <Animated.View entering={FadeInUp.delay(350).springify().damping(14)}>
               <Text style={styles.sectionTitle}>Tech Stack & Skills</Text>
               <GlassCard style={styles.sectionCard}>
                 <View style={styles.skillsGrid}>
-                  {company.tech_stack.map((skill, idx) => (
+                  {company.skills.map((skill, idx) => (
                     <View key={idx} style={styles.skillChip}>
                       <Ionicons name="code-slash" size={12} color={colors.primary} style={{ marginRight: 4 }} />
                       <Text style={styles.skillChipText}>{skill}</Text>

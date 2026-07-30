@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store';
-import { authApi } from '@/lib/api';
+import { userApi } from '../../lib/api';
 
 export default function OAuthCallbackScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -17,7 +17,7 @@ export default function OAuthCallbackScreen() {
     const handleOAuth = async () => {
       try {
         setCredentials({ user: null as any, token });
-        const res = await authApi.getProfile();
+        const res = await userApi.getProfile();
         const user = res.data?.user || res.data?.data || res.data;
         setCredentials({ user, token });
 

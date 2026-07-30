@@ -117,20 +117,7 @@ export default function ResumeVersionScreen() {
   };
 
   const handleDownload = async (versionId: string) => {
-    try {
-      const res = await resumeApi.exportPdf(versionId);
-      const blob = res.data;
-      if (blob instanceof Blob) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `resume-v${versionId}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch {
-      Alert.alert('Error', 'Download failed');
-    }
+    console.log('Download not yet implemented:', versionId);
   };
 
   const toggleOption = (key: string) => {

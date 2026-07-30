@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
 import { useResponsive } from '../../lib/responsive';
 import { AnimatedBackground } from '../../components/ui/AnimatedBackground';
-import { authApi } from '../../lib/api';
+import { userApi } from '../../lib/api';
 
 export default function ForgotPasswordScreen() {
   const { horizontalPadding } = useResponsive();
@@ -22,7 +22,7 @@ export default function ForgotPasswordScreen() {
     if (!email) { setError('Please enter your email'); return; }
     setLoading(true); setError('');
     try {
-      await authApi.forgotPassword(email);
+      await userApi.forgotPassword(email);
       setSent(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to send reset email');

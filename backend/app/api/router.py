@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from . import auth, users, resumes, cover_letters, cold_emails, jobs, applications, ai_features, analytics, webhooks
-from . import notifications, companies, contact, messages, resources, subscriptions
+from . import notifications, companies, contact, messages, resources, subscriptions, saved_jobs
 
 api_router = APIRouter()
 
@@ -20,3 +20,4 @@ api_router.include_router(contact.router, prefix="/contact", tags=["Contact"])
 api_router.include_router(messages.router, prefix="/messages", tags=["Messages"])
 api_router.include_router(resources.router, prefix="/resources", tags=["Resources"])
 api_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["Subscriptions"])
+api_router.include_router(saved_jobs.router, prefix="/saved-jobs", tags=["Saved Jobs"])

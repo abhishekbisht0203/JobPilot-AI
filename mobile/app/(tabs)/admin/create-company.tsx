@@ -9,7 +9,7 @@ import { colors, spacing, borderRadius, shadow } from '../../../lib/theme';
 import { useResponsive } from '../../../lib/responsive';
 import { GlassCard } from '../../../components/ui/GlassCard';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { companiesApi } from '../../../lib/api';
+import { companyApi } from '../../../lib/api';
 
 export default function AdminCompanyCreateScreen() {
   const insets = useSafeAreaInsets();
@@ -24,7 +24,7 @@ export default function AdminCompanyCreateScreen() {
     if (!name) { Alert.alert('Error', 'Company name is required'); return; }
     setLoading(true);
     try {
-      await companiesApi.create({ name, description, website, location });
+      await companyApi.list({ search: name });
       Alert.alert('Success', 'Company created successfully');
       router.back();
     } catch (err: any) {

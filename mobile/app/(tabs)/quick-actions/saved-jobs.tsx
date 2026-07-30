@@ -14,8 +14,8 @@ import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { JobCardSkeleton } from '../../../components/ui/Skeleton';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { useJobStore } from '../../../store';
-import { jobsApi } from '../../../lib/api';
+import { useSavedJobsStore } from '../../../store';
+import { jobApi } from '../../../lib/api';
 import { Job } from '../../../types';
 import { formatSalary, timeAgo } from '../../../lib/helpers';
 
@@ -26,18 +26,19 @@ export default function SavedJobsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activePlatform, setActivePlatform] = useState('all');
-  const { savedJobs, toggleSaveJob } = useJobStore();
+  const savedIds = useSavedJobsStore((s) => s.savedIds)
+  const toggleSave = useSavedJobsStore((s) => s.toggleSave);
   const { horizontalPadding } = useResponsive();
   const insets = useSafeAreaInsets();
 
   const fetchSavedJobs = useCallback(async () => {
     try {
-      const savedIds = useJobStore.getState().savedJobs;
+      const savedIds = useSavedJobsStore.getState().savedIds;
       if (savedIds.length === 0) {
         setJobs([]);
         return;
       }
-      const res = await jobsApi.list({ page: 1, per_page: 100 });
+      const res = await jobApi.list({ page: 1, per_page: 50 });
       const allJobs: Job[] = res.data.data || [];
       setJobs(allJobs.filter((j) => savedIds.includes(j.id)));
     } catch {} finally {
@@ -46,7 +47,7 @@ export default function SavedJobsScreen() {
     }
   }, []);
 
-  useEffect(() => { fetchSavedJobs(); }, [savedJobs.length]);
+  useEffect(() => { fetchSavedJobs(); }, [savedIds.length]);
 
   const filtered = activePlatform === 'all'
     ? jobs
@@ -63,7 +64,7 @@ export default function SavedJobsScreen() {
             <Text style={styles.jobTitle} numberOfLines={1}>{item.title}</Text>
             <Text style={styles.jobCompany} numberOfLines={1}>{item.company}</Text>
           </View>
-          <TouchableOpacity onPress={() => toggleSaveJob(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={() => toggleSave(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="bookmark" size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>

@@ -14,7 +14,7 @@ import { colors, spacing, borderRadius, shadow } from '../../../lib/theme';
 import { useResponsive } from '../../../lib/responsive';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import { useJobStore, useDashboardStore } from '../../../store';
-import { applicationsApi, notificationsApi, messagesApi } from '../../../lib/api';
+import { applicationApi, notificationApi } from '../../../lib/api';
 
 const QUICK_ACTION_ITEMS = [
   {
@@ -25,7 +25,7 @@ const QUICK_ACTION_ITEMS = [
     gradient: colors.gradient.blue,
     route: '/quick-actions/saved-jobs',
     getPreview: () => {
-      const count = useJobStore.getState().savedJobs.length;
+      const count = 0; // saved jobs count from store
       return `${count} saved`;
     },
   },

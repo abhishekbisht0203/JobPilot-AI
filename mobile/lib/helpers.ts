@@ -8,6 +8,11 @@ export function formatSalary(min?: number, max?: number, currency?: string): str
   return `Up to ${sym}${formatNumber(max!)}`;
 }
 
+export function formatSalaryFromString(salary?: string): string {
+  if (!salary) return 'Salary not disclosed';
+  return salary;
+}
+
 function formatNumber(n: number): string {
   if (n >= 100000) return `${(n / 100000).toFixed(1)}L`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;

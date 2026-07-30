@@ -114,7 +114,7 @@ export default function ATSScoreScreen() {
     }
   };
 
-  const selected = selectedId ? resumes.find(r => r.id === selectedId) : resumes[0] || null;
+  const selected = selectedId ? resumes.find(r => r._id === selectedId) : resumes[0] || null;
   const displayScore = selected?.ats_score || 0;
   const computedScores = BREAKDOWN_SEGMENTS.map(s => ({
     ...s,
@@ -222,17 +222,17 @@ export default function ATSScoreScreen() {
 
             <Text style={styles.sectionTitle}>Analyzed Resumes</Text>
             {resumes.map((resume, index) => (
-              <Animated.View key={resume.id} entering={FadeInDown.delay(300 + index * 50).springify().damping(14)}>
-                <TouchableOpacity onPress={() => setSelectedId(resume.id)} activeOpacity={0.8}>
-                  <BlurView intensity={40} tint="light" style={[styles.resumeCard, selectedId === resume.id && styles.resumeCardActive]}>
+              <Animated.View key={resume._id} entering={FadeInDown.delay(300 + index * 50).springify().damping(14)}>
+                <TouchableOpacity onPress={() => setSelectedId(resume._id)} activeOpacity={0.8}>
+                  <BlurView intensity={40} tint="light" style={[styles.resumeCard, selectedId === resume._id && styles.resumeCardActive]}>
                     <LinearGradient colors={['#06B6D4', '#14B8A6']} style={styles.resumeIcon}>
                       <Ionicons name="document-text" size={18} color="#FFFFFF" />
                     </LinearGradient>
                     <View style={styles.resumeInfo}>
                       <Text style={styles.resumeName} numberOfLines={1}>{resume.original_filename}</Text>
-                      <Text style={styles.resumeDate}>{formatDate(resume.created_at)}</Text>
+                      <Text style={styles.resumeDate}>{formatDate(resume.created_at || '')}</Text>
                     </View>
-                    <Badge label={`${resume.ats_score || 0} ATS`} variant={resume.ats_score >= 80 ? 'success' : resume.ats_score >= 60 ? 'warning' : 'error'} size="sm" />
+                    <Badge label={`${resume.ats_score! || 0} ATS`} variant={resume.ats_score! >= 80 ? 'success' : resume.ats_score! >= 60 ? 'warning' : 'error'} size="sm" />
                   </BlurView>
                 </TouchableOpacity>
               </Animated.View>

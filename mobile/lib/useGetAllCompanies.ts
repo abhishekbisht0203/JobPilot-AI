@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCompanyStore } from '../store';
-import { companiesApi } from './api';
+import { companyApi } from './api';
 
 export function useGetAllCompanies() {
   const [loading, setLoading] = useState(false);
@@ -11,7 +11,7 @@ export function useGetAllCompanies() {
     try {
       setLoading(true);
       setError(null);
-      const res = await companiesApi.list();
+      const res = await companyApi.list();
       const data = res.data;
       const items = data.data || data.companies || data || [];
       setCompanies(items);

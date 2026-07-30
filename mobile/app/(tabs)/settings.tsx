@@ -16,7 +16,7 @@ import { useResponsive } from '../../lib/responsive';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Badge } from '../../components/ui/Badge';
 import { useAuthStore, useThemeStore } from '../../store';
-import { settingsApi } from '../../lib/api';
+import { userApi } from '../../lib/api';
 import { ThemeMode } from '../../types';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
 
@@ -114,7 +114,7 @@ export default function SettingsScreen() {
     }
     setPwLoading(true);
     try {
-      await settingsApi.updatePassword(currentPw, newPw);
+      await userApi.changePassword(currentPw, newPw);
       Alert.alert('Success', 'Password changed successfully.');
       setCurrentPw('');
       setNewPw('');
@@ -134,7 +134,7 @@ export default function SettingsScreen() {
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: async () => {
           try {
-            await settingsApi.deleteAccount();
+            await userApi.deleteAccount();
             logout();
             router.replace('/(auth)/login');
           } catch (err: any) {

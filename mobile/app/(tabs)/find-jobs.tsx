@@ -22,10 +22,10 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
 import { MatchScoreRingSimple } from '../../components/ui/MatchScoreRing';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
-import { jobsApi } from '../../lib/api';
-import { useJobStore } from '../../store';
+import { jobApi } from '../../lib/api';
+import { useSavedJobsStore } from '../../store';
 import { Job } from '../../types';
-import { formatSalary, timeAgo, getMatchColor, getInitials, truncate } from '../../lib/helpers';
+import { formatSalary, formatSalaryFromString, timeAgo, getMatchColor, getInitials, truncate } from '../../lib/helpers';
 
 const PLATFORM_FILTERS = [
   { key: '', label: 'All', icon: 'apps' },
@@ -165,15 +165,15 @@ function SortPill({ label, icon, active, onPress }: {
   );
 }
 
-function JobCard({ item, index, savedJobs, toggleSaveJob, onApply, onShare }: {
-  item: Job; index: number; savedJobs: string[];
-  toggleSaveJob: (id: string) => void;
+function JobCard({ item, index, savedIds, toggleSave, onApply, onShare }: {
+  item: Job; index: number; savedIds: string[];
+  toggleSave: (id: string) => void;
   onApply: (job: Job) => void;
   onShare: (job: Job) => void;
 }) {
-  const isSaved = savedJobs.includes(item.id);
+  const isSaved = savedIds.includes(item.id || item._id);
   const initials = getInitials(item.company);
-  const matchScore = item.match_score ?? 0;
+  const matchScore = 0;
   const matchColor = getMatchColor(matchScore);
 
   return (
@@ -191,7 +191,7 @@ function JobCard({ item, index, savedJobs, toggleSaveJob, onApply, onShare }: {
             <Text style={styles.jobCompany} numberOfLines={1}>{item.company}</Text>
           </View>
           <TouchableOpacity
-            onPress={() => toggleSaveJob(item.id)}
+            onPress={() => toggleSave(item.id || item._id)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <LinearGradient
@@ -214,10 +214,10 @@ function JobCard({ item, index, savedJobs, toggleSaveJob, onApply, onShare }: {
               <Text style={styles.metaText} numberOfLines={1}>{item.location}</Text>
             </View>
           )}
-          {item.posted_at && (
+          {item.created_at && (
             <View style={styles.metaItem}>
               <Ionicons name="time-outline" size={13} color={colors.textMuted} />
-              <Text style={styles.metaText}>{timeAgo(item.posted_at)}</Text>
+              <Text style={styles.metaText}>{timeAgo(item.created_at)}</Text>
             </View>
           )}
           {item.platform && (
@@ -229,24 +229,24 @@ function JobCard({ item, index, savedJobs, toggleSaveJob, onApply, onShare }: {
         </View>
 
         <View style={styles.jobDetailRow}>
-          {item.salary_min && (
+          {(item.salary_min || item.salary_max) && (
             <LinearGradient colors={colors.gradient.success} style={styles.salaryBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
               <Text style={styles.salaryText}>{formatSalary(item.salary_min, item.salary_max, item.currency)}</Text>
             </LinearGradient>
           )}
-          {matchScore > 0 && (
+          {false && (
             <MatchScoreRingSimple score={matchScore} size={44} animated />
           )}
         </View>
 
         <View style={styles.skillsRow}>
-          {item.skills?.slice(0, 3).map((s, i) => (
+          {[].slice(0, 3).map((s, i) => (
             <View key={i} style={styles.skillChip}>
               <Text style={styles.skillChipText}>{s}</Text>
             </View>
           ))}
-          {item.skills && item.skills.length > 3 && (
-            <Text style={styles.moreSkills}>+{item.skills.length - 3}</Text>
+          {false && (
+            <Text style={styles.moreSkills}>+{[].length - 3}</Text>
           )}
         </View>
 
@@ -284,7 +284,8 @@ export default function FindJobsScreen() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const { savedJobs, toggleSaveJob } = useJobStore();
+  const savedIds = useSavedJobsStore((s) => s.savedIds);
+  const toggleSave = useSavedJobsStore((s) => s.toggleSave);
   const insets = useSafeAreaInsets();
   const { horizontalPadding } = useResponsive();
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -305,7 +306,7 @@ export default function FindJobsScreen() {
       if (searchQuery) params.search = searchQuery;
       if (activePlatform) params.platform = activePlatform;
 
-      const res = await jobsApi.list(params);
+      const res = await jobApi.list(params);
       const data = res.data;
       const fetchedJobs: Job[] = data.data || [];
       const totalCount = data.total || 0;
@@ -401,12 +402,12 @@ export default function FindJobsScreen() {
     <JobCard
       item={item}
       index={index}
-      savedJobs={savedJobs}
-      toggleSaveJob={toggleSaveJob}
+      savedIds={savedIds}
+      toggleSave={toggleSave}
       onApply={handleApply}
       onShare={handleShare}
     />
-  ), [savedJobs, toggleSaveJob, handleApply, handleShare]);
+  ), [savedIds, toggleSave, handleApply, handleShare]);
 
   const renderSkeleton = useCallback(() => (
     <View style={{ gap: spacing.md }}>
@@ -597,7 +598,7 @@ export default function FindJobsScreen() {
       <FlatList
         data={filteredJobs}
         renderItem={renderJob}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id || item._id}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}
