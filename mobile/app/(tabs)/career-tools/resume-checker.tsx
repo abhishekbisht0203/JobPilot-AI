@@ -11,12 +11,20 @@ import { GlassCard } from '../../../components/ui/GlassCard';
 import { Badge } from '../../../components/ui/Badge';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import {
-  ToolHeader, GradientButton, AnimatedScoreRing, SectionHeader, TabBar, InfoCard, EmptyToolState
+  ScreenHeader, GradientButton, AnimatedScoreRing, SectionHeader, TabBar, InfoCard, EmptyToolState
 } from '../../../components/career-tools';
-import { UploadCard, AnimatedCard, BadgePill } from '../../../components/career-tools/shared';
+import { UploadCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
 import { resumeApi } from '../../../lib/api';
 import { Resume } from '../../../types';
 import { formatDate } from '../../../lib/helpers';
+
+const HERO_GRADIENT = colors.tool.resumeChecker;
+const HERO_FEATURES = [
+  { icon: 'checkmark-circle', text: 'ATS Score' },
+  { icon: 'checkmark-circle', text: 'Matched Skills' },
+  { icon: 'checkmark-circle', text: 'AI Feedback' },
+  { icon: 'checkmark-circle', text: 'Improvement Tips' },
+];
 
 interface GrammarIssue {
   issue: string;
@@ -452,7 +460,7 @@ export default function ResumeCheckerScreen() {
 
   return (
     <View style={styles.container}>
-      <ToolHeader title="Resume Checker" subtitle="AI-powered ATS compatibility analysis" gradient={['#E11D48', '#BE185D'] as const} icon="document-text-outline" />
+      <ScreenHeader title="Resume Checker" subtitle="Check your resume & get AI feedback" icon="shield-checkmark" iconColors={HERO_GRADIENT} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
@@ -460,7 +468,18 @@ export default function ResumeCheckerScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchResumes(); }} tintColor={colors.primary} colors={[colors.primary]} />
         }
       >
-        <Animated.View entering={FadeInDown.delay(80).springify().damping(14)} style={styles.uploadSection}>
+        <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
+          <GradientCard
+            colors={HERO_GRADIENT}
+            icon="shield-checkmark"
+            title="Improve your resume"
+            subtitle="Get AI suggestions to boost your score"
+          >
+            <FeatureList items={HERO_FEATURES} color="#99F6E4" />
+          </GradientCard>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(120).springify().damping(14)} style={styles.uploadSection}>
           <UploadCard onPress={handleUpload} uploading={uploading} uploaded={resumes.length > 0} label="Upload Resume for Analysis" />
         </Animated.View>
 
@@ -525,7 +544,7 @@ export default function ResumeCheckerScreen() {
               <AnimatedCard key={resume.id || resume._id} index={index} delay={220}>
                 <TouchableOpacity onPress={() => { setSelectedId(selectedId === (resume.id || resume._id) ? null : (resume.id || resume._id)); setAnalysis(null); }} activeOpacity={0.8}>
                   <BlurView intensity={40} tint="light" style={[styles.resumeCard, selectedId === resume._id && styles.resumeCardActive]}>
-                    <LinearGradient colors={['#E11D48', '#BE185D']} style={styles.resumeIcon}>
+                    <LinearGradient colors={HERO_GRADIENT} style={styles.resumeIcon}>
                       <Ionicons name="document-text" size={18} color="#FFFFFF" />
                     </LinearGradient>
                     <View style={styles.resumeInfo}>
@@ -540,7 +559,7 @@ export default function ResumeCheckerScreen() {
             })}
 
             <Animated.View entering={FadeInDown.delay(300).springify().damping(14)} style={{ marginTop: spacing.sm }}>
-              <GradientButton title={analyzing ? 'Analyzing...' : 'Analyze Resume'} icon="analytics" onPress={handleAnalyze} disabled={!selectedId} loading={analyzing} gradient={['#E11D48', '#BE185D'] as const} />
+              <GradientButton title={analyzing ? 'Analyzing...' : 'Analyze Resume'} icon="analytics" onPress={handleAnalyze} disabled={!selectedId} loading={analyzing} gradient={HERO_GRADIENT} />
             </Animated.View>
 
             {analyzing && (
@@ -570,7 +589,7 @@ export default function ResumeCheckerScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() },
+  scroll: { paddingBottom: getTabListBottomPadding(), paddingTop: spacing.md },
   header: { paddingBottom: spacing.md },
   backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm },
   title: { fontSize: 28, fontWeight: '700', color: colors.text, letterSpacing: -0.5 },

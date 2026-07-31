@@ -12,8 +12,10 @@ import {
   GradientCard, FeatureList, SessionCard, PrimaryButton,
   CTSectionHeader, LoadingState,
 } from '../../../components/career-tools/shared';
+import { ScreenHeader } from '../../../components/career-tools';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const HERO_GRADIENT = colors.tool.mockInterview;
 
 const FEATURES = [
   { icon: 'chatbubbles', text: 'AI-powered interview simulation' },
@@ -48,16 +50,17 @@ export default function MockInterviewScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader title="Mock Interview" subtitle="Practice with AI Interviewer" icon="mic" iconColors={HERO_GRADIENT} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInUp.delay(100).springify().damping(14)} style={{ marginTop: spacing.md }}>
-          <LinearGradient colors={['#14B8A6', '#0D9488']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+        <Animated.View entering={FadeInUp.delay(100).springify().damping(14)}>
+          <LinearGradient colors={HERO_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>Mock Interview</Text>
-              <Text style={styles.heroSub}>Practice with AI-powered simulations</Text>
-              <FeatureList items={FEATURES} color="#5EEAD4" />
+              <Text style={styles.heroTitle}>AI Interviewer</Text>
+              <Text style={styles.heroSub}>Real-time feedback to improve your communication</Text>
+              <FeatureList items={FEATURES} color="#86EFAC" />
             </View>
             <Animated.View style={[styles.heroIllustration, floatStyle]}>
               <View style={styles.robotIcon}>
@@ -74,7 +77,7 @@ export default function MockInterviewScreen() {
             title="Start Interview"
             icon="mic"
             onPress={() => router.push('/ai/mock-interview' as any)}
-            gradient={['#14B8A6', '#0D9488']}
+            gradient={HERO_GRADIENT}
           />
         </Animated.View>
 
@@ -90,7 +93,7 @@ export default function MockInterviewScreen() {
               duration={s.duration}
               date={s.date}
               score={s.score}
-              gradientColors={['#14B8A6', '#0D9488']}
+              gradientColors={HERO_GRADIENT}
               onPress={() => router.push('/ai/mock-interview' as any)}
             />
           ))
@@ -102,7 +105,7 @@ export default function MockInterviewScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() + spacing.xl },
+  scroll: { paddingBottom: getTabListBottomPadding() + spacing.xl, paddingTop: spacing.md },
   heroCard: {
     borderRadius: borderRadius.xxl,
     padding: spacing.lg,

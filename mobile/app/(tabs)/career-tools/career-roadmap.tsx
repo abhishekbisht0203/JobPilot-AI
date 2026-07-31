@@ -13,10 +13,17 @@ import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { ToolHeader, SectionHeader, GradientButton, TabBar, StatCard, ProgressBar, InfoCard, EmptyToolState } from '../../../components/career-tools';
-import { RoadmapCard, AnimatedCard, BadgePill } from '../../../components/career-tools/shared';
+import { ScreenHeader, SectionHeader, GradientButton, TabBar, StatCard, ProgressBar, InfoCard, EmptyToolState } from '../../../components/career-tools';
+import { RoadmapCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
 import { aiApi } from '../../../lib/api';
 import { SkillGapAnalysis } from '../../../types';
+
+const HERO_GRADIENT = colors.tool.careerRoadmap;
+const HERO_FEATURES = [
+  { icon: 'list', text: 'Step-by-step guide' },
+  { icon: 'construct', text: 'Skill recommendations' },
+  { icon: 'trending-up', text: 'Track your progress' },
+];
 
 const ROLE_SUGGESTIONS = [
   'Frontend Developer', 'Backend Developer', 'Full Stack Engineer',
@@ -180,7 +187,7 @@ export default function CareerRoadmapScreen() {
           icon={loading ? 'hourglass-outline' : 'trending-up'}
           onPress={handleAnalyze}
           loading={loading}
-          gradient={['#6366F1', '#8B5CF6'] as const}
+          gradient={HERO_GRADIENT}
           disabled={loading || !targetRole.trim()}
           style={{ marginTop: spacing.md }}
         />
@@ -225,7 +232,7 @@ export default function CareerRoadmapScreen() {
             {missingSkills.slice(0, 8).map((skill: string, index: number) => (
               <Animated.View key={index} entering={FadeInDown.delay(200 + index * 40).springify().damping(14)}>
                 <BlurView intensity={40} tint="light" style={styles.skillCard}>
-                  <LinearGradient colors={['#6366F1', '#8B5CF6']} style={styles.skillBadge}>
+                  <LinearGradient colors={HERO_GRADIENT} style={styles.skillBadge}>
                     <Ionicons name="add-circle" size={14} color="#FFFFFF" />
                   </LinearGradient>
                   <Text style={styles.skillName}>{skill}</Text>
@@ -295,12 +302,23 @@ export default function CareerRoadmapScreen() {
 
   return (
     <View style={styles.container}>
-      <ToolHeader title="Career Roadmap" subtitle="Discover skills and steps for your dream role" gradient={['#6366F1', '#8B5CF6'] as const} icon="map" />
+      <ScreenHeader title="Career Roadmap" subtitle="Plan your career growth" icon="location" iconColors={HERO_GRADIENT} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
+          <GradientCard
+            colors={HERO_GRADIENT}
+            icon="flag"
+            title="Your personalized career roadmap"
+            subtitle="A step-by-step guide to reach your dream role"
+          >
+            <FeatureList items={HERO_FEATURES} color="#FBCFE8" />
+          </GradientCard>
+        </Animated.View>
+
         {!analysis ? (
           wizardForm
         ) : (
@@ -308,7 +326,7 @@ export default function CareerRoadmapScreen() {
             <Animated.View entering={FadeInDown.delay(150).springify().damping(14)}>
               <GlassCard style={styles.resultHeader} glowColor={colors.success}>
                 <View style={styles.resultHeaderRow}>
-                  <LinearGradient colors={['#6366F1', '#8B5CF6']} style={styles.roleIcon}>
+                  <LinearGradient colors={HERO_GRADIENT} style={styles.roleIcon}>
                     <Ionicons name="briefcase" size={22} color="#FFFFFF" />
                   </LinearGradient>
                   <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -338,7 +356,7 @@ export default function CareerRoadmapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() },
+  scroll: { paddingBottom: getTabListBottomPadding(), paddingTop: spacing.md },
   formCard: { marginBottom: spacing.md, marginTop: spacing.md },
   formTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: spacing.md },
   inputLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: spacing.xs, marginTop: spacing.sm },

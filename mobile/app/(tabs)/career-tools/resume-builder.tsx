@@ -13,7 +13,10 @@ import {
   GradientCard, FeatureList, ResumeCard, PrimaryButton, SecondaryButton,
   CTSectionHeader, LoadingState, AnimatedCard,
 } from '../../../components/career-tools/shared';
+import { ScreenHeader } from '../../../components/career-tools';
 import { Badge } from '../../../components/ui/Badge';
+
+const HERO_GRADIENT = colors.tool.resumeBuilder;
 
 const FEATURES = [
   { icon: 'document-text', text: 'ATS-optimized templates' },
@@ -41,16 +44,17 @@ export default function ResumeBuilderScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader title="AI Resume Builder" subtitle="Create ATS-friendly resumes" icon="sparkles" iconColors={HERO_GRADIENT} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInUp.delay(100).springify().damping(14)} style={{ marginTop: spacing.md }}>
+        <Animated.View entering={FadeInUp.delay(100).springify().damping(14)}>
           <GradientCard
-            colors={['#7C3AED', '#4F46E5']}
+            colors={HERO_GRADIENT}
             icon="document-text"
             title="AI Resume Builder"
-            subtitle="Create professional, ATS-optimized resumes in minutes"
+            subtitle="Build a professional resume that passes ATS scanners"
           >
             <FeatureList items={FEATURES} color="#A78BFA" />
           </GradientCard>
@@ -61,7 +65,7 @@ export default function ResumeBuilderScreen() {
             title="Create New Resume"
             icon="add-circle"
             onPress={handleCreate}
-            gradient={['#7C3AED', '#4F46E5']}
+            gradient={HERO_GRADIENT}
           />
         </Animated.View>
 
@@ -78,7 +82,7 @@ export default function ResumeBuilderScreen() {
               name={r.name}
               date={r.date}
               score={r.score}
-              gradientColors={['#7C3AED', '#4F46E5']}
+              gradientColors={HERO_GRADIENT}
               onPress={() => router.push('/generate/resume-version' as any)}
             />
           ))
@@ -90,5 +94,5 @@ export default function ResumeBuilderScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() + spacing.xl },
+  scroll: { paddingBottom: getTabListBottomPadding() + spacing.xl, paddingTop: spacing.md },
 });

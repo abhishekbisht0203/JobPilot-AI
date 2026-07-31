@@ -18,9 +18,16 @@ import { jobApi } from '../../../lib/api';
 import { Job } from '../../../types';
 import { formatSalary, formatSalaryFromString } from '../../../lib/helpers';
 import {
-  ToolHeader, SectionHeader, StatCard, InfoCard, ChipFilter, TabBar, GradientButton, EmptyToolState
+  ScreenHeader, SectionHeader, StatCard, InfoCard, ChipFilter, TabBar, GradientButton, EmptyToolState
 } from '../../../components/career-tools';
-import { SearchBar, AnimatedCard, SalaryCard, BadgePill } from '../../../components/career-tools/shared';
+import { SearchBar, AnimatedCard, SalaryCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
+
+const HERO_GRADIENT = colors.tool.salaryExplorer;
+const HERO_FEATURES = [
+  { icon: 'trending-up', text: 'Real salary insights' },
+  { icon: 'location', text: 'Location based' },
+  { icon: 'business', text: 'Company Insights' },
+];
 
 const TABS = [
   { key: 'explore', label: 'Explore', icon: 'search' },
@@ -143,11 +150,11 @@ export default function SalaryExplorerScreen() {
 
   return (
     <View style={styles.container}>
-      <ToolHeader
+      <ScreenHeader
         title="Salary Explorer"
-        subtitle="Live salary data from job listings"
-        gradient={['#059669', '#0D9488']}
+        subtitle="Compare salaries worldwide"
         icon="cash"
+        iconColors={HERO_GRADIENT}
       />
 
       <ScrollView
@@ -157,6 +164,17 @@ export default function SalaryExplorerScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchJobs(); }} tintColor={colors.primary} colors={[colors.primary]} />
         }
       >
+        <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
+          <GradientCard
+            colors={HERO_GRADIENT}
+            icon="globe"
+            title="Explore salaries for top roles"
+            subtitle="Real insights from live job listings worldwide"
+          >
+            <FeatureList items={HERO_FEATURES} color="#FED7AA" />
+          </GradientCard>
+        </Animated.View>
+
         {loading && <Loader />}
 
         {!loading && (
@@ -337,7 +355,7 @@ export default function SalaryExplorerScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() },
+  scroll: { paddingBottom: getTabListBottomPadding(), paddingTop: spacing.md },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.md },
   searchInput: {
     backgroundColor: colors.surface,

@@ -12,9 +12,16 @@ import { GlassCard } from '../../../components/ui/GlassCard';
 import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { ToolHeader, SectionHeader, GradientButton, TabBar, InfoCard, ProgressBar } from '../../../components/career-tools';
-import { SearchBar, TopicCard, AnimatedCard, BadgePill } from '../../../components/career-tools/shared';
+import { ScreenHeader, SectionHeader, GradientButton, TabBar, InfoCard, ProgressBar } from '../../../components/career-tools';
+import { SearchBar, TopicCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
 import { resourceApi } from '../../../lib/api';
+
+const HERO_GRADIENT = colors.tool.interviewPrep;
+const HERO_FEATURES = [
+  { icon: 'help-circle', text: 'Curated Questions' },
+  { icon: 'apps', text: 'Topic Wise' },
+  { icon: 'trending-up', text: 'Track Progress' },
+];
 
 interface QuestionItem {
   text: string;
@@ -166,7 +173,7 @@ export default function InterviewPrepScreen() {
       {TIPS.map((tip, index) => (
         <Animated.View key={tip.title} entering={FadeInDown.delay(200 + index * 60).springify().damping(14)}>
           <BlurView intensity={40} tint="light" style={styles.tipCard}>
-            <LinearGradient colors={['#F472B6', '#EC4899']} style={styles.tipIcon}>
+            <LinearGradient colors={HERO_GRADIENT} style={styles.tipIcon}>
               <Ionicons name={tip.icon as any} size={18} color="#FFFFFF" />
             </LinearGradient>
             <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -194,7 +201,7 @@ export default function InterviewPrepScreen() {
             icon={cat.icon}
             completion={total > 0 ? Math.round((reviewed / total) * 100) : 0}
             questionCount={total}
-            gradientColors={['#F472B6', '#EC4899']}
+            gradientColors={HERO_GRADIENT}
             onPress={() => setExpandedCat(expandedCat === cat.category ? null : cat.category)}
           />
         );
@@ -247,7 +254,7 @@ export default function InterviewPrepScreen() {
       )}
 
       <TouchableOpacity onPress={() => (router as any).push?.('/ai/mock-interview')} style={styles.mockBtn} activeOpacity={0.8}>
-        <LinearGradient colors={['#F472B6', '#EC4899']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.mockGradient}>
+        <LinearGradient colors={HERO_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.mockGradient}>
           <Ionicons name="mic" size={20} color="#FFFFFF" />
           <Text style={styles.mockText}> Practice with AI Mock Interview</Text>
         </LinearGradient>
@@ -257,12 +264,23 @@ export default function InterviewPrepScreen() {
 
   return (
     <View style={styles.container}>
-      <ToolHeader title="Interview Preparation" subtitle="Practice questions, tips, and guidance" gradient={['#F472B6', '#EC4899'] as const} icon="help-circle" />
+      <ScreenHeader title="Interview Prep" subtitle="Practice interview questions" icon="book" iconColors={HERO_GRADIENT} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
+          <GradientCard
+            colors={HERO_GRADIENT}
+            icon="book"
+            title="Prepare for your dream job"
+            subtitle="Curated questions, tips, and guidance"
+          >
+            <FeatureList items={HERO_FEATURES} color="#BFDBFE" />
+          </GradientCard>
+        </Animated.View>
+
         <TabBar tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
         {activeTab === 'tips' && tipsTab}
@@ -275,7 +293,7 @@ export default function InterviewPrepScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() },
+  scroll: { paddingBottom: getTabListBottomPadding(), paddingTop: spacing.md },
   tipCard: { flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderRadius: borderRadius.xl, marginBottom: spacing.sm, overflow: 'hidden' },
   tipIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   tipTitle: { fontSize: 15, fontWeight: '600', color: colors.text },

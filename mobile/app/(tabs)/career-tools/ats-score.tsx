@@ -15,11 +15,18 @@ import { Badge } from '../../../components/ui/Badge';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
-import { ToolHeader, AnimatedScoreRing, SectionHeader, GradientButton, ProgressBar, EmptyToolState } from '../../../components/career-tools';
-import { UploadCard, AnimatedCard, BadgePill } from '../../../components/career-tools/shared';
+import { ScreenHeader, AnimatedScoreRing, SectionHeader, GradientButton, ProgressBar, EmptyToolState } from '../../../components/career-tools';
+import { UploadCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
 import { resumeApi } from '../../../lib/api';
 import { Resume } from '../../../types';
 import { formatDate } from '../../../lib/helpers';
+
+const HERO_GRADIENT = colors.tool.atsScore;
+const HERO_FEATURES = [
+  { icon: 'speedometer', text: 'ATS Score' },
+  { icon: 'key', text: 'Missing Keywords' },
+  { icon: 'bulb', text: 'AI Suggestions' },
+];
 
 interface AtsBreakdown {
   label: string;
@@ -158,7 +165,7 @@ export default function ATSScoreScreen() {
 
   return (
     <View style={styles.container}>
-      <ToolHeader title="ATS Score" subtitle="Deep ATS compatibility analysis" gradient={['#06B6D4', '#14B8A6'] as const} icon="speedometer" />
+      <ScreenHeader title="ATS Score" subtitle="Analyze your resume" icon="shield" iconColors={HERO_GRADIENT} />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
@@ -167,7 +174,18 @@ export default function ATSScoreScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchResumes(); }} tintColor={colors.primary} colors={[colors.primary]} />
         }
       >
-        <Animated.View entering={FadeInDown.delay(100).springify().damping(14)}>
+        <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
+          <GradientCard
+            colors={HERO_GRADIENT}
+            icon="shield"
+            title="Get your ATS Score"
+            subtitle="Upload your resume and improve it"
+          >
+            <FeatureList items={HERO_FEATURES} color="#FED7AA" />
+          </GradientCard>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(120).springify().damping(14)}>
           <UploadCard onPress={handleUpload} uploading={uploading} uploaded={resumes.length > 0} label="Upload Resume for ATS Analysis" />
         </Animated.View>
 
@@ -198,7 +216,7 @@ export default function ATSScoreScreen() {
                     icon={analyzing ? 'hourglass-outline' : 'analytics'}
                     onPress={handleAnalyze}
                     loading={analyzing}
-                    gradient={['#06B6D4', '#14B8A6'] as const}
+                    gradient={HERO_GRADIENT}
                     disabled={analyzing}
                     style={{ marginTop: spacing.sm }}
                   />
@@ -320,7 +338,7 @@ export default function ATSScoreScreen() {
               <AnimatedCard key={resume.id || resume._id} index={index} delay={400}>
                 <TouchableOpacity onPress={() => { setSelectedId(resume.id || resume._id); setAnalysis(null); setError(null); }} activeOpacity={0.8}>
                   <BlurView intensity={40} tint="light" style={[styles.resumeCard, selectedId === (resume.id || resume._id) && styles.resumeCardActive]}>
-                    <LinearGradient colors={['#06B6D4', '#14B8A6']} style={styles.resumeIcon}>
+                    <LinearGradient colors={HERO_GRADIENT} style={styles.resumeIcon}>
                       <Ionicons name="document-text" size={18} color="#FFFFFF" />
                     </LinearGradient>
                     <View style={styles.resumeInfo}>
@@ -342,7 +360,7 @@ export default function ATSScoreScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() },
+  scroll: { paddingBottom: getTabListBottomPadding(), paddingTop: spacing.md },
   uploadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.md, borderRadius: borderRadius.lg, gap: spacing.sm, ...shadow.lg, marginBottom: spacing.md, marginTop: spacing.md },
   uploadText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   jdCard: { marginBottom: spacing.md },

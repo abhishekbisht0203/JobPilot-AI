@@ -42,6 +42,30 @@ export function ToolHeader({ title, subtitle, gradient, icon, backLabel }: {
   );
 }
 
+export function ScreenHeader({ title, subtitle, icon, iconColors }: {
+  title: string; subtitle?: string; icon?: string; iconColors?: readonly [string, string];
+}) {
+  const insets = useSafeAreaInsets();
+  const { horizontalPadding } = useResponsive();
+  const iconGrad = iconColors || ['#0A66C2', '#2563EB'] as const;
+  return (
+    <View style={[styles.screenHeader, { paddingTop: insets.top + 12, paddingHorizontal: horizontalPadding }]}>
+      <TouchableOpacity onPress={() => { try { if (router.canGoBack()) router.back(); else router.replace('/(tabs)/career-tools'); } catch {} }} style={styles.screenBackBtn}>
+        <Ionicons name="arrow-back" size={20} color={colors.text} />
+      </TouchableOpacity>
+      <View style={{ flex: 1, marginLeft: spacing.sm }}>
+        <Text style={styles.screenHeaderTitle}>{title}</Text>
+        {subtitle && <Text style={styles.screenHeaderSub}>{subtitle}</Text>}
+      </View>
+      {icon && (
+        <LinearGradient colors={iconGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.screenHeaderIcon}>
+          <Ionicons name={icon as any} size={18} color="#FFF" />
+        </LinearGradient>
+      )}
+    </View>
+  );
+}
+
 export function SectionHeader({ title, icon, badge, action }: {
   title: string; icon?: string; badge?: string | number; action?: React.ReactNode;
 }) {
@@ -228,6 +252,11 @@ const styles = StyleSheet.create({
   toolHeaderIcon: { marginLeft: spacing.sm },
   toolHeaderTitle: { color: '#FFF', fontSize: 20, fontWeight: '700' },
   toolHeaderSub: { color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 },
+  screenHeader: { flexDirection: 'row', alignItems: 'center', paddingBottom: spacing.md, backgroundColor: colors.background },
+  screenBackBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center' },
+  screenHeaderTitle: { color: colors.text, fontSize: 19, fontWeight: '700' },
+  screenHeaderSub: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
+  screenHeaderIcon: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginLeft: spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm, marginTop: spacing.md },
   sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700' },
   statCard: { padding: spacing.sm, borderRadius: borderRadius.xl, overflow: 'hidden', gap: spacing.xxs },

@@ -23,7 +23,7 @@ import { Button } from '../../components/ui/Button';
 import { MatchScoreRingSimple } from '../../components/ui/MatchScoreRing';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
 import { jobApi } from '../../lib/api';
-import { useSavedJobsStore } from '../../store';
+import { useSavedJobsStore, useAuthStore } from '../../store';
 import { Job } from '../../types';
 import { formatSalary, formatSalaryFromString, timeAgo, getMatchColor, getInitials, truncate } from '../../lib/helpers';
 
@@ -286,6 +286,7 @@ export default function FindJobsScreen() {
 
   const savedIds = useSavedJobsStore((s) => s.savedIds);
   const toggleSave = useSavedJobsStore((s) => s.toggleSave);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const insets = useSafeAreaInsets();
   const { horizontalPadding } = useResponsive();
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -322,8 +323,15 @@ export default function FindJobsScreen() {
       setHasMore(pageNum < totalPages);
       setPage(pageNum);
       setFetchError(null);
-    } catch {
-      setFetchError('Unable to load jobs. Check your connection and try again.');
+    } catch (err: any) {
+      // Stop pagination on failure so onEndReached doesn't keep re-firing
+      // the same failing request on every layout pass.
+      setHasMore(false);
+      setFetchError(
+        err?.response?.status === 401
+          ? 'Your session expired. Please sign in again.'
+          : 'Unable to load jobs. Check your connection and try again.'
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -332,16 +340,22 @@ export default function FindJobsScreen() {
   }, [searchQuery, activePlatform]);
 
   useEffect(() => {
+    // Wait for the persisted auth token to finish loading before firing the
+    // first request — otherwise this can race ahead of rehydration and go
+    // out with no Authorization header, which the backend correctly
+    // rejects (401), but we don't want a spurious first failure.
+    if (!hasHydrated) return;
     fetchJobs(1, false);
-  }, [activePlatform]);
+  }, [activePlatform, hasHydrated]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       fetchJobs(1, false);
     }, 400);
     return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
-  }, [searchQuery]);
+  }, [searchQuery, hasHydrated]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

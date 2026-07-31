@@ -60,10 +60,10 @@ export default function Login() {
         dispatch(setCredentials({ user: res.data.user, token: res.data.token }))
         const redirectTo = searchParams.get("redirect") || "/"
         navigate(redirectTo, { replace: true })
-        toast.success(res.data.message)
+        toast.success("Welcome back!")
       }
     } catch (err) {
-      const msg = err.response?.data?.message || "Login failed"
+      const msg = err.response?.data?.detail || err.response?.data?.message || "Login failed"
       toast.error(msg)
       setShakeKey((k) => k + 1)
     } finally {

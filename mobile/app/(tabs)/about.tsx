@@ -17,6 +17,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { AnimatedCounter } from '../../components/ui/AnimatedCounter';
 import { getTabListBottomPadding } from '../../components/ui/TabBarHeight';
+import { FounderCard, Founder } from '../../components/about/FounderCard';
 
 interface Stat {
   label: string;
@@ -60,6 +61,49 @@ const STATS: Stat[] = [
   { label: 'Happy Candidates', value: 85000, suffix: '+', icon: 'happy', color: colors.success, gradient: colors.gradient.success },
   { label: 'Companies', value: 4200, suffix: '+', icon: 'business', color: colors.secondary, gradient: colors.gradient.purple },
   { label: 'Countries', value: 48, suffix: '', icon: 'globe', color: colors.accent.teal, gradient: colors.gradient.teal },
+];
+
+const FULL_STACK_GRADIENT = ['#0A66C2', '#06B6D4'] as const;
+const AI_ML_GRADIENT = ['#9333EA', '#DB2777'] as const;
+const ROLE_GRADIENT = ['#059669', '#0D9488'] as const;
+
+const FOUNDERS: Founder[] = [
+  {
+    name: 'Darshan Goswami',
+    initials: 'DG',
+    avatarGradient: colors.gradient.blue,
+    position: 'CTO & Co-Founder',
+    specialties: 'Software Engineer • AI/ML Engineer • Full Stack Developer',
+    bio: 'Darshan Goswami is responsible for the technology, AI systems, backend architecture, and product engineering of JobPilot AI. He specializes in Full Stack Development, Artificial Intelligence, Machine Learning, scalable backend systems, cloud deployment, and modern web technologies. His vision is to build AI-powered career solutions that simplify job searching and career growth for millions of users.',
+    skills: ['Artificial Intelligence', 'Machine Learning', 'Full Stack Development', 'React', 'Next.js', 'FastAPI', 'Django', 'Node.js', 'PostgreSQL', 'Docker', 'LangChain', 'LangGraph', 'RAG', 'MCP', 'Cloud Computing'],
+    badges: [
+      { label: 'Full Stack', icon: 'ribbon', gradient: FULL_STACK_GRADIENT },
+      { label: 'AI/ML', icon: 'sparkles', gradient: AI_ML_GRADIENT },
+      { label: 'Engineering', icon: 'code-slash', gradient: ROLE_GRADIENT },
+    ],
+    linkedInUrl: 'https://linkedin.com/in/darshan-goswami',
+    githubUrl: 'https://github.com/Darshangoswami07',
+    portfolioUrl: 'https://darshangoswami.com',
+    email: 'darshan@jobpilot.ai',
+  },
+  {
+    name: 'Abhishek Bisht',
+    initials: 'AB',
+    avatarGradient: colors.gradient.purple,
+    position: 'CEO & Co-Founder',
+    specialties: 'Full Stack Developer • Software Engineer • AI/ML Engineer • Product Strategist',
+    bio: 'Abhishek Bisht leads the overall vision, product strategy, business development, and growth of JobPilot AI. He also works as a Full Stack Developer, managing the database, backend, and frontend of the JobPilot AI platform. He works closely on AI-driven innovation, user experience, and building a world-class platform that connects job seekers with the best career opportunities through intelligent automation.',
+    skills: ['Artificial Intelligence', 'Machine Learning', 'Full Stack Development', 'React', 'Next.js', 'Python', 'Node.js', 'Django', 'PostgreSQL', 'MongoDB', 'Product Management', 'UI/UX Design', 'Cloud Computing', 'Business Strategy'],
+    badges: [
+      { label: 'Full Stack', icon: 'ribbon', gradient: FULL_STACK_GRADIENT },
+      { label: 'AI/ML', icon: 'sparkles', gradient: AI_ML_GRADIENT },
+      { label: 'Leadership', icon: 'code-slash', gradient: ROLE_GRADIENT },
+    ],
+    linkedInUrl: 'https://linkedin.com/in/abhishek-bisht',
+    githubUrl: 'https://github.com/abhishekbisht',
+    portfolioUrl: 'https://abhishekbisht.com',
+    email: 'abhishek@jobpilot.ai',
+  },
 ];
 
 const TEAM: TeamMember[] = [
@@ -323,6 +367,15 @@ export default function AboutScreen() {
               </React.Fragment>
             ))}
           </GlassCard>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(480).springify().damping(14)}>
+          <Text style={styles.sectionTitle}>Our Founders</Text>
+          <View style={{ gap: spacing.md }}>
+            {FOUNDERS.map((founder) => (
+              <FounderCard key={founder.name} founder={founder} />
+            ))}
+          </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(500).springify().damping(14)}>

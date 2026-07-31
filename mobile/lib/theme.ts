@@ -92,6 +92,18 @@ export const colors = {
     aurora: ['#0891B2', '#059669'] as const,
     nebula: ['#4F46E5', '#DB2777'] as const,
   },
+
+  // Career Tools hero-card gradients, sampled from the design reference (images/image.png)
+  tool: {
+    resumeBuilder: ['#5B3FC4', '#8161E0'] as const,
+    coverLetter: ['#5B3FD1', '#8865E6'] as const,
+    resumeChecker: ['#1196B0', '#24A6BE'] as const,
+    mockInterview: ['#1CA171', '#35B57F'] as const,
+    salaryExplorer: ['#FC8C26', '#FDB349'] as const,
+    careerRoadmap: ['#DD4585', '#ED75AA'] as const,
+    interviewPrep: ['#268BE2', '#43B7E9'] as const,
+    atsScore: ['#F9A93E', '#FEC55D'] as const,
+  },
 };
 
 export const spacing = {

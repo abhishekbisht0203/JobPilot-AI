@@ -21,7 +21,7 @@ const resolveBackendUrl = () => {
 
 export const BACKEND_URL = resolveBackendUrl();
 
-export const USER_API_END_POINT = `${BACKEND_URL}/api/v1/user`;
+export const USER_API_END_POINT = `${BACKEND_URL}/api/v1/auth`;
 export const JOB_API_END_POINT = `${BACKEND_URL}/api/v1/job`;
 export const APPLICATION_API_END_POINT = `${BACKEND_URL}/api/v1/application`;
 export const COMPANY_API_END_POINT = `${BACKEND_URL}/api/v1/company`;
