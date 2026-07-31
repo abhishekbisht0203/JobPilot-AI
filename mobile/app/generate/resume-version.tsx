@@ -10,10 +10,10 @@ import Animated, {
   FadeInDown, FadeInUp, useSharedValue, withSpring, withTiming,
   useAnimatedStyle, interpolate, Extrapolation, Easing,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
+import { GlobalHeader } from '../../components/GlobalHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -314,7 +314,6 @@ function buildResumeText(data: any): string {
 
 export default function ResumeVersionScreen() {
   const { resumeId } = useLocalSearchParams<{ resumeId: string }>();
-  const insets = useSafeAreaInsets();
 
   const [resume, setResume] = useState<any>(null);
   const [versions, setVersions] = useState<any[]>([]);
@@ -476,7 +475,8 @@ export default function ResumeVersionScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.container}>
+        <GlobalHeader />
         <View style={styles.skeletonContent}>
           {[1, 2, 3, 4].map((i) => (
             <View key={i} style={[styles.skeletonBlock, { height: i === 1 ? 80 : i === 2 ? 120 : i === 3 ? 60 : 160 }]} />
@@ -488,8 +488,9 @@ export default function ResumeVersionScreen() {
 
   return (
     <View style={styles.container}>
+      <GlobalHeader />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 12 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: spacing.md }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={colors.primary} />}
       >
