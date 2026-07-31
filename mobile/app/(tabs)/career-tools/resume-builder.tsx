@@ -11,18 +11,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import {
   GradientCard, FeatureList, ResumeCard, PrimaryButton, SecondaryButton,
-  CTSectionHeader, LoadingState, AnimatedCard,
+  CTSectionHeader, LoadingState,
 } from '../../../components/career-tools/shared';
 import { ScreenHeader } from '../../../components/career-tools';
-import { Badge } from '../../../components/ui/Badge';
+import { ResumeBuilderIllus } from '../../../components/career-tools/illustrations';
 
 const HERO_GRADIENT = colors.tool.resumeBuilder;
 
 const FEATURES = [
-  { icon: 'document-text', text: 'ATS-optimized templates' },
   { icon: 'sparkles', text: 'AI-powered content suggestions' },
-  { icon: 'color-palette', text: 'Professional color schemes' },
-  { icon: 'download', text: 'Export as PDF or DOCX' },
+  { icon: 'checkmark-circle', text: 'ATS optimized templates' },
+  { icon: 'download', text: 'Download PDF' },
 ];
 
 const MOCK_RESUMES = [
@@ -52,11 +51,10 @@ export default function ResumeBuilderScreen() {
         <Animated.View entering={FadeInUp.delay(100).springify().damping(14)}>
           <GradientCard
             colors={HERO_GRADIENT}
-            icon="document-text"
-            title="AI Resume Builder"
-            subtitle="Build a professional resume that passes ATS scanners"
+            illustration={<ResumeBuilderIllus />}
+            title="Build a professional resume that passes ATS scanners"
           >
-            <FeatureList items={FEATURES} color="#A78BFA" />
+            <FeatureList items={FEATURES} />
           </GradientCard>
         </Animated.View>
 

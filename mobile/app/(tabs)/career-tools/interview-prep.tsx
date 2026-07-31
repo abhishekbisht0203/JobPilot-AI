@@ -14,6 +14,7 @@ import { EmptyState } from '../../../components/ui/EmptyState';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import { ScreenHeader, SectionHeader, GradientButton, TabBar, InfoCard, ProgressBar } from '../../../components/career-tools';
 import { SearchBar, TopicCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
+import { InterviewPrepIllus } from '../../../components/career-tools/illustrations';
 import { resourceApi } from '../../../lib/api';
 
 const HERO_GRADIENT = colors.tool.interviewPrep;
@@ -273,11 +274,11 @@ export default function InterviewPrepScreen() {
         <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
           <GradientCard
             colors={HERO_GRADIENT}
-            icon="book"
+            illustration={<InterviewPrepIllus />}
             title="Prepare for your dream job"
             subtitle="Curated questions, tips, and guidance"
           >
-            <FeatureList items={HERO_FEATURES} color="#BFDBFE" />
+            <FeatureList items={HERO_FEATURES} />
           </GradientCard>
         </Animated.View>
 

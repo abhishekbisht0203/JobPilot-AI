@@ -25,6 +25,10 @@ import {
   ToolHeader, GradientButton, SectionHeader, AnimatedScoreRing,
   InfoCard, TabBar, EmptyToolState,
 } from '../../components/career-tools';
+import {
+  GradientCard, FeatureList, PrimaryButton,
+} from '../../components/career-tools/shared';
+import { ResumeBuilderIllus } from '../../components/career-tools/illustrations';
 
 const TEMPLATES = [
   { id: 'modern', name: 'Modern', color: '#0A66C2' },
@@ -64,6 +68,14 @@ const SECTION_ICONS: Record<string, string> = {
   languages: 'language',
   achievements: 'star',
 };
+
+const HERO_GRADIENT = ['#7C3AED', '#4F46E5'] as const;
+
+const HERO_FEATURES = [
+  { icon: 'sparkles', text: 'AI Content' },
+  { icon: 'shield-checkmark', text: 'ATS Templates' },
+  { icon: 'download', text: 'Download PDF' },
+];
 
 const emptyForm = {
   template: 'modern',
@@ -127,13 +139,14 @@ const tagStyles = StyleSheet.create({
   chipText: { fontSize: 12, fontWeight: '500', color: colors.primary },
   inputRow: { flexDirection: 'row', gap: spacing.xs },
   input: {
-    flex: 1, backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md, height: 40, color: colors.text, fontSize: 14,
-    borderWidth: 1, borderColor: colors.border,
+    flex: 1, backgroundColor: colors.white, borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md, height: 42, color: colors.text, fontSize: 14,
+    borderWidth: 1, borderColor: colors.borderLight, ...shadow.sm,
   },
   addBtn: {
-    width: 40, height: 40, borderRadius: borderRadius.md,
+    width: 42, height: 42, borderRadius: borderRadius.lg,
     backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center',
+    ...shadow.sm,
   },
 });
 
@@ -159,9 +172,9 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false }: {
 
 const cs = StyleSheet.create({
   section: {
-    backgroundColor: colors.surface, borderRadius: borderRadius.lg,
-    borderWidth: 1, borderColor: colors.border, marginBottom: spacing.sm,
-    overflow: 'hidden',
+    backgroundColor: colors.white, borderRadius: borderRadius.lg,
+    borderWidth: 1, borderColor: colors.borderLight, marginBottom: spacing.sm,
+    overflow: 'hidden', ...shadow.sm,
   },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -169,10 +182,10 @@ const cs = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   iconWrap: {
-    width: 30, height: 30, borderRadius: 8,
+    width: 30, height: 30, borderRadius: 10,
     backgroundColor: colors.primaryBg, justifyContent: 'center', alignItems: 'center',
   },
-  title: { fontSize: 15, fontWeight: '600', color: colors.text },
+  title: { fontSize: 15, fontWeight: '700', color: colors.text },
   body: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
 });
 
@@ -200,9 +213,9 @@ function FormInput({ label, value, onChangeText, placeholder, multiline, keyboar
 const fi = StyleSheet.create({
   label: { fontSize: 12, fontWeight: '600', color: colors.text, marginBottom: spacing.xs },
   input: {
-    backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md, height: 44, color: colors.text, fontSize: 14,
-    borderWidth: 1, borderColor: colors.border,
+    backgroundColor: colors.white, borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md, height: 46, color: colors.text, fontSize: 14,
+    borderWidth: 1, borderColor: colors.borderLight, ...shadow.sm,
   },
   multiline: { height: 80, paddingTop: spacing.sm },
 });
@@ -245,8 +258,9 @@ const ar = StyleSheet.create({
   addText: { fontSize: 13, fontWeight: '600', color: colors.primary },
   empty: { fontSize: 12, color: colors.textMuted, marginBottom: spacing.sm },
   item: {
-    backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md,
+    backgroundColor: colors.white, borderRadius: borderRadius.lg,
     padding: spacing.md, marginBottom: spacing.sm, position: 'relative',
+    borderWidth: 1, borderColor: colors.borderLight, ...shadow.sm,
   },
   removeBtn: { position: 'absolute', top: spacing.sm, right: spacing.sm, zIndex: 1 },
 });
@@ -498,6 +512,13 @@ export default function ResumeVersionScreen() {
           )}
         </View>
 
+        <Animated.View entering={FadeInDown.delay(60).springify().damping(14)} style={styles.heroWrap}>
+          <GradientCard colors={HERO_GRADIENT} illustration={<ResumeBuilderIllus />} title="Build a professional resume that passes ATS scanners">
+            <Text style={styles.heroSub}>Pick a template, set your target role, and let AI optimize every section for recruiters and ATS systems.</Text>
+            <FeatureList items={HERO_FEATURES} />
+          </GradientCard>
+        </Animated.View>
+
         {error && (
           <Animated.View entering={FadeInUp.springify().damping(14)}>
             <GlassCard style={styles.errorCard}>
@@ -539,21 +560,36 @@ export default function ResumeVersionScreen() {
 
         {/* Template Selector */}
         <Animated.View entering={FadeInDown.delay(170).springify().damping(14)}>
-          <Text style={styles.sectionTitle}>Template</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Template</Text>
+            <Badge label="Choose a design" variant="default" size="sm" />
+          </View>
           <View style={styles.templateRow}>
-            {TEMPLATES.map((t) => (
-              <TouchableOpacity
-                key={t.id}
-                onPress={() => handleFormChange('template', t.id)}
-                style={[styles.templateChip, form.template === t.id && styles.templateChipActive]}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.templateDot, { backgroundColor: t.color }]} />
-                <Text style={[styles.templateText, form.template === t.id && styles.templateTextActive]}>
-                  {t.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {TEMPLATES.map((t) => {
+              const active = form.template === t.id;
+              return (
+                <TouchableOpacity
+                  key={t.id}
+                  onPress={() => handleFormChange('template', t.id)}
+                  style={[styles.templateChip, active && styles.templateChipActive]}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.templateSwatch, { backgroundColor: t.color }]}>
+                    <View style={[styles.templateSwatchLine, { backgroundColor: 'rgba(255,255,255,0.6)' }]} />
+                    <View style={[styles.templateSwatchLine, { width: '55%', backgroundColor: 'rgba(255,255,255,0.4)' }]} />
+                    <View style={[styles.templateSwatchLine, { width: '70%', backgroundColor: 'rgba(255,255,255,0.25)' }]} />
+                  </View>
+                  <Text style={[styles.templateText, active && styles.templateTextActive]}>
+                    {t.name}
+                  </Text>
+                  {active && (
+                    <View style={styles.templateCheck}>
+                      <Ionicons name="checkmark" size={10} color="#FFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </Animated.View>
 
@@ -753,28 +789,13 @@ export default function ResumeVersionScreen() {
 
             {/* Generate Button */}
             <Animated.View entering={FadeInDown.delay(500).springify().damping(14)}>
-              <TouchableOpacity
+              <PrimaryButton
+                title={creating ? 'AI is optimizing...' : 'Generate Optimized Resume'}
+                icon="sparkles"
                 onPress={handleCreate}
-                disabled={creating}
-                activeOpacity={0.8}
-                style={styles.generateBtn}
-              >
-                <LinearGradient
-                  colors={creating ? ['#9CA3AF', '#6B7280'] : colors.gradient.primary}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.generateGrad}
-                >
-                  {creating ? (
-                    <Loader message="AI is optimizing..." />
-                  ) : (
-                    <>
-                      <Ionicons name="sparkles" size={20} color="#FFF" />
-                      <Text style={styles.generateText}>Generate Optimized Resume</Text>
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+                loading={creating}
+                gradient={HERO_GRADIENT}
+              />
             </Animated.View>
           </>
         )}
@@ -953,7 +974,7 @@ export default function ResumeVersionScreen() {
                       <Text style={styles.versionDate}>{v.created_at ? formatDate(v.created_at) : ''}</Text>
                     </View>
                     <TouchableOpacity onPress={() => { setSelectedVersion(v); setTab('preview'); }} style={styles.versionAction}>
-                      <Ionicons name="eye-outline" size={20} color={colors.primary} />
+                      <Ionicons name="chevron-forward" size={20} color={colors.primary} />
                     </TouchableOpacity>
                   </View>
                 </Card>
@@ -979,6 +1000,9 @@ const styles = StyleSheet.create({
   savingBadge: { backgroundColor: colors.primary + '15', paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: borderRadius.full },
   savingText: { fontSize: 11, fontWeight: '600', color: colors.primary },
 
+  heroWrap: { marginBottom: spacing.lg },
+  heroSub: { color: 'rgba(255,255,255,0.92)', fontSize: 13, lineHeight: 19, marginBottom: spacing.md },
+
   errorCard: { padding: spacing.md, alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   errorText: { color: colors.error, fontSize: 14, textAlign: 'center' },
   retryBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: colors.primary, borderRadius: borderRadius.md },
@@ -994,55 +1018,57 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.text, fontSize: 16, fontWeight: '700', marginBottom: spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
 
-  templateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
+  templateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   templateChip: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.border, ...shadow.xs,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg, backgroundColor: colors.white,
+    borderWidth: 1, borderColor: colors.borderLight, ...shadow.sm,
   },
-  templateChipActive: { borderColor: colors.primary, backgroundColor: colors.primary + '10' },
-  templateDot: { width: 10, height: 10, borderRadius: 5 },
-  templateText: { fontSize: 12, fontWeight: '500', color: colors.textSecondary },
-  templateTextActive: { color: colors.primary, fontWeight: '600' },
+  templateChipActive: { borderColor: colors.primary, backgroundColor: colors.primary + '08', ...shadow.glow.primary },
+  templateSwatch: { width: 24, height: 24, borderRadius: 7, justifyContent: 'center', alignItems: 'flex-start', gap: 2, paddingHorizontal: 4 },
+  templateSwatchLine: { width: '100%', height: 2, borderRadius: 1 },
+  templateCheck: {
+    position: 'absolute', top: -4, right: -4,
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center',
+  },
+  templateText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  templateTextActive: { color: colors.primary, fontWeight: '700' },
 
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.lg },
   chip: {
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
-    borderRadius: borderRadius.full, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.border, ...shadow.xs,
+    borderRadius: borderRadius.full, backgroundColor: colors.white,
+    borderWidth: 1, borderColor: colors.borderLight, ...shadow.sm,
   },
-  chipActive: { backgroundColor: colors.primary + '15', borderColor: colors.primary },
+  chipActive: { backgroundColor: colors.primary + '12', borderColor: colors.primary, ...shadow.glow.primary },
   chipText: { color: colors.textSecondary, fontSize: 13, fontWeight: '500' },
-  chipTextActive: { color: colors.primary, fontWeight: '600' },
+  chipTextActive: { color: colors.primary, fontWeight: '700' },
 
-  customInputWrap: { backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md },
+  customInputWrap: { backgroundColor: colors.white, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.borderLight, marginBottom: spacing.md, ...shadow.sm },
   customInput: { paddingHorizontal: spacing.md, height: 48, color: colors.text, fontSize: 14 },
 
-  floatingInputWrap: { backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg, paddingTop: 6 },
+  floatingInputWrap: { backgroundColor: colors.white, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.borderLight, marginBottom: spacing.lg, paddingTop: 6, ...shadow.sm },
   floatingLabel: { position: 'absolute', left: spacing.md, top: 14, color: colors.textMuted, fontSize: 14 },
   floatingLabelUp: { top: 6, fontSize: 11, color: colors.primary },
   floatingInput: { paddingHorizontal: spacing.md, paddingTop: 18, paddingBottom: 10, color: colors.text, fontSize: 15 },
 
-  optionGrid: { gap: spacing.xs, marginBottom: spacing.lg },
+  optionGrid: { gap: spacing.sm, marginBottom: spacing.lg },
   optionCard: {
     flexDirection: 'row', alignItems: 'center', padding: spacing.md,
-    backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md,
-    borderWidth: 1, borderColor: colors.border, gap: spacing.sm,
+    backgroundColor: colors.white, borderRadius: borderRadius.lg,
+    borderWidth: 1, borderColor: colors.borderLight, gap: spacing.sm, ...shadow.sm,
   },
-  optionCardActive: { borderColor: colors.primary, backgroundColor: colors.primary + '08' },
+  optionCardActive: { borderColor: colors.primary, backgroundColor: colors.primary + '06', ...shadow.glow.primary },
   optionCheck: { width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' },
   optionCheckActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  optionLabel: { color: colors.text, fontSize: 14, fontWeight: '500' },
+  optionLabel: { color: colors.text, fontSize: 14, fontWeight: '600' },
   optionLabelActive: { color: colors.primary },
   optionDesc: { color: colors.textMuted, fontSize: 11, marginTop: 1 },
 
-  jdInputWrap: { backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
+  jdInputWrap: { backgroundColor: colors.white, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.borderLight, marginBottom: spacing.lg, ...shadow.sm },
   jdInput: { padding: spacing.md, color: colors.text, fontSize: 14, minHeight: 140 },
-
-  generateBtn: { borderRadius: borderRadius.md, overflow: 'hidden', marginBottom: spacing.lg, ...shadow.glow.primary },
-  generateGrad: { paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.sm },
-  generateText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 
   previewContainer: { marginBottom: spacing.lg },
   previewInner2: {

@@ -17,6 +17,7 @@ import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import { ScreenHeader, AnimatedScoreRing, SectionHeader, GradientButton, ProgressBar, EmptyToolState } from '../../../components/career-tools';
 import { UploadCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
+import { ATSScoreIllus } from '../../../components/career-tools/illustrations';
 import { resumeApi } from '../../../lib/api';
 import { Resume } from '../../../types';
 import { formatDate } from '../../../lib/helpers';
@@ -177,16 +178,16 @@ export default function ATSScoreScreen() {
         <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
           <GradientCard
             colors={HERO_GRADIENT}
-            icon="shield"
+            illustration={<ATSScoreIllus />}
             title="Get your ATS Score"
             subtitle="Upload your resume and improve it"
           >
-            <FeatureList items={HERO_FEATURES} color="#FED7AA" />
+            <FeatureList items={HERO_FEATURES} />
           </GradientCard>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(120).springify().damping(14)}>
-          <UploadCard onPress={handleUpload} uploading={uploading} uploaded={resumes.length > 0} label="Upload Resume for ATS Analysis" />
+          <UploadCard onPress={handleUpload} uploading={uploading} uploaded={resumes.length > 0} label="Upload Resume for ATS Analysis" gradient={HERO_GRADIENT} />
         </Animated.View>
 
         {loading && <Loader />}
@@ -330,7 +331,7 @@ export default function ATSScoreScreen() {
               <EmptyToolState icon="analytics" title="No Analysis Yet" message="Select a resume and click Analyze to see your ATS score breakdown." />
             )}
 
-            <SectionHeader title="Analyzed Resumes" icon="document-text" />
+            <SectionHeader title="Recent Scores" icon="document-text" badge={resumes.length} />
             {resumes.map((resume, index) => {
               const sc = resume.ats_score || 0;
               const v = sc >= 80 ? 'success' as const : sc >= 60 ? 'warning' as const : 'error' as const;
@@ -346,6 +347,7 @@ export default function ATSScoreScreen() {
                       <Text style={styles.resumeDate}>{formatDate(resume.created_at || '')}</Text>
                     </View>
                     <BadgePill label={`${sc} ATS`} variant={v} />
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={styles.chevron} />
                   </BlurView>
                 </TouchableOpacity>
               </AnimatedCard>
@@ -390,4 +392,5 @@ const styles = StyleSheet.create({
   resumeInfo: { flex: 1, marginLeft: spacing.sm },
   resumeName: { fontSize: 14, fontWeight: '600', color: colors.text },
   resumeDate: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  chevron: { marginLeft: spacing.xs, opacity: 0.7 },
 });

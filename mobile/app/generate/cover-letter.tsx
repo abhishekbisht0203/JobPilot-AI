@@ -7,7 +7,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Button } from '../../components/ui/Button';
@@ -17,12 +16,25 @@ import { Card } from '../../components/ui/Card';
 import { coverLetterApi } from '../../lib/api';
 import { formatDate } from '../../lib/helpers';
 import {
-  ToolHeader, GradientButton, SectionHeader, TabBar, InfoCard,
+  ScreenHeader, GradientButton, SectionHeader, TabBar, InfoCard,
   EmptyToolState, AnimatedScoreRing,
 } from '../../components/career-tools';
+import {
+  GradientCard, FeatureList, PrimaryButton,
+} from '../../components/career-tools/shared';
+import { CoverLetterIllus } from '../../components/career-tools/illustrations';
+import { GlobalHeader } from '../../components/GlobalHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
+
+const HERO_GRADIENT = ['#6366F1', '#8B5CF6'] as const;
+
+const HERO_FEATURES = [
+  { icon: 'sparkles', text: 'AI-Generated Content' },
+  { icon: 'shield-checkmark', text: 'ATS-Optimized' },
+  { icon: 'flash', text: 'Instant Improvement' },
+];
 
 const EXPERIENCE_OPTIONS = [
   { value: 'entry', label: 'Entry Level' },
@@ -94,7 +106,6 @@ const initialForm = {
 };
 
 export default function CoverLetterScreen() {
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ jobTitle?: string; company?: string; jobDescription?: string }>();
 
   const [view, setView] = useState<'list' | 'editor'>('list');
@@ -340,23 +351,31 @@ export default function CoverLetterScreen() {
   const hasContent = generatedContent.trim().length > 0;
 
   return (
-    <View style={[s.container, { paddingTop: insets.top }]}>
+    <View style={s.container}>
+      <GlobalHeader />
       {view === 'list' ? (
         <>
-          <ToolHeader
+          <ScreenHeader
             title="Cover Letter Generator"
             subtitle="Craft compelling cover letters that hiring managers actually read."
-            gradient={['#6366F1', '#8B5CF6']}
             icon="document-text"
+            iconColors={HERO_GRADIENT}
           />
           <ScrollView
             style={s.scrollArea}
             contentContainerStyle={s.scrollContent}
             showsVerticalScrollIndicator={false}
           >
+            <View style={s.listHero}>
+              <GradientCard colors={HERO_GRADIENT} illustration={<CoverLetterIllus />} title="Craft a cover letter that gets you hired">
+                <Text style={s.heroSub}>Impress recruiters with a professional, personalized cover letter written by AI in seconds.</Text>
+                <FeatureList items={HERO_FEATURES} />
+              </GradientCard>
+            </View>
+
             <View style={s.listHeader}>
               <SectionHeader
-                title="Saved Cover Letters"
+                title="Recent Cover Letters"
                 icon="folder"
                 badge={coverLetters.length}
                 action={
@@ -409,12 +428,15 @@ export default function CoverLetterScreen() {
                       style={listStyles.card}
                     >
                       <View style={listStyles.cardTop}>
-                        <Text style={listStyles.cardTitle} numberOfLines={1}>
-                          {cl.title || 'Untitled'}
-                        </Text>
-                        {cl.isGenerated && (
-                          <Badge label="AI" variant="primary" size="sm" icon="sparkles" />
-                        )}
+                        <View style={listStyles.cardTitleRow}>
+                          <Text style={listStyles.cardTitle} numberOfLines={1}>
+                            {cl.title || 'Untitled'}
+                          </Text>
+                          {cl.isGenerated && (
+                            <Badge label="AI" variant="primary" size="sm" icon="sparkles" />
+                          )}
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                       </View>
                       <View style={listStyles.cardBody}>
                         {cl.companyName ? (
@@ -469,6 +491,14 @@ export default function CoverLetterScreen() {
           </View>
 
           <View style={s.editorLayout}>
+            <View style={s.editorHero}>
+              <GradientCard colors={HERO_GRADIENT} illustration={<CoverLetterIllus />} title="Write a cover letter that gets you hired">
+                <Text style={s.heroSub}>Share your story and stand out from the crowd with a professional, ATS-friendly cover letter.</Text>
+                <FeatureList items={HERO_FEATURES} />
+              </GradientCard>
+            </View>
+
+            <View style={s.editorRow}>
             <View style={s.formColumn}>
               <Animated.View entering={FadeInUp.springify().damping(14)}>
                 <GlassCard style={s.glassCard}>
@@ -577,12 +607,12 @@ export default function CoverLetterScreen() {
                     </View>
                   </View>
 
-                  <GradientButton
+                  <PrimaryButton
                     title={generating ? 'Generating...' : 'Generate Cover Letter'}
                     icon="wand"
                     onPress={handleGenerate}
                     loading={generating}
-                    gradient={['#6366F1', '#8B5CF6']}
+                    gradient={HERO_GRADIENT}
                   />
                 </GlassCard>
               </Animated.View>
@@ -620,10 +650,10 @@ export default function CoverLetterScreen() {
                 <GlassCard style={[s.glassCard, s.resultCard]}>
                   {!hasContent && !generating ? (
                     <View style={s.emptyResult}>
-                      <View style={s.emptyResultIcon}>
-                        <Ionicons name="document-text-outline" size={48} color={colors.textMuted} />
-                      </View>
-                      <Text style={s.emptyResultTitle}>No content yet</Text>
+                      <LinearGradient colors={HERO_GRADIENT} style={s.emptyResultIcon}>
+                        <Ionicons name="mail-open" size={34} color="#FFF" />
+                      </LinearGradient>
+                      <Text style={s.emptyResultTitle}>Your cover letter will appear here</Text>
                       <Text style={s.emptyResultSub}>
                         Fill in the details and tap "Generate Cover Letter"
                       </Text>
@@ -703,6 +733,7 @@ export default function CoverLetterScreen() {
               </Animated.View>
             </View>
           </View>
+          </View>
         </ScrollView>
       )}
     </View>
@@ -713,11 +744,16 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollArea: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
+  listHero: { paddingHorizontal: spacing.lg },
+  editorHero: { marginBottom: spacing.md },
+  heroSub: { color: 'rgba(255,255,255,0.92)', fontSize: 13, lineHeight: 19, marginBottom: spacing.md },
+  editorRow: { gap: spacing.md },
   listHeader: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   newBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: colors.primary, paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm, borderRadius: borderRadius.full,
+    ...shadow.sm,
   },
   newBtnText: { color: colors.white, fontSize: 13, fontWeight: '600' },
   centerWrap: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.md },
@@ -744,9 +780,10 @@ const s = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '600', color: colors.text, marginBottom: spacing.xs },
   required: { color: colors.error },
   input: {
-    backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md, height: 48, color: colors.text, fontSize: 14,
+    backgroundColor: colors.white, borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md, height: 50, color: colors.text, fontSize: 14,
     borderWidth: 1, borderColor: colors.border,
+    ...shadow.sm,
   },
   selectWrap: { position: 'relative' },
   selectInput: { color: colors.textMuted },
@@ -761,8 +798,8 @@ const s = StyleSheet.create({
   selectOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   selectOptionText: { fontSize: 12, fontWeight: '500', color: colors.textSecondary },
   selectOptionTextActive: { color: colors.white },
-  emptyResult: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyResultIcon: { width: 80, height: 80, borderRadius: 24, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center' },
+  emptyResult: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+  emptyResultIcon: { width: 88, height: 88, borderRadius: 26, justifyContent: 'center', alignItems: 'center', ...shadow.md },
   emptyResultTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
   emptyResultSub: { fontSize: 13, color: colors.textSecondary, textAlign: 'center' },
   resultCard: { minHeight: 450 },
@@ -825,7 +862,8 @@ const listStyles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.borderLight,
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: colors.text, flex: 1, marginRight: spacing.xs },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flex: 1, marginRight: spacing.xs },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: colors.text, flexShrink: 1 },
   cardBody: { gap: spacing.xs, marginBottom: spacing.sm },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   cardMetaText: { fontSize: 12, color: colors.textSecondary, flex: 1 },

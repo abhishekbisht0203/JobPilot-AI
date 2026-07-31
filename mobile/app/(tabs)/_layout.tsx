@@ -2,11 +2,11 @@ import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { StyleSheet, Platform, View, Text, TouchableOpacity } from 'react-native';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
-import { useAuthStore, useDrawerStore } from '../../store';
+import { colors, borderRadius } from '../../lib/theme';
+import { useAuthStore } from '../../store';
 import { MeshGradient } from '../../components/ui/MeshGradient';
+import { GlobalHeader } from '../../components/GlobalHeader';
 
 const TABS = [
   { name: 'index', label: 'Home', icon: 'grid-outline' as const, activeIcon: 'grid' as const },
@@ -72,8 +72,6 @@ function TabBar({ state, descriptors, navigation }: any) {
 export default function TabsLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const router = useRouter();
-  const openDrawer = useDrawerStore((s) => s.open);
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -84,35 +82,7 @@ export default function TabsLayout() {
   return (
     <View style={styles.container}>
       <MeshGradient />
-      <View style={[styles.headerBar, { paddingTop: insets.top + 4 }]}>
-        <TouchableOpacity
-          style={styles.hamburgerBtn}
-          onPress={openDrawer}
-          activeOpacity={0.7}
-          accessibilityLabel="Open navigation menu"
-          accessibilityRole="button"
-        >
-          <Ionicons name="menu-outline" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <LinearGradient
-          colors={['#3B82F6', '#6366F1']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerLogoSmall}
-        >
-          <Ionicons name="briefcase" size={16} color="#FFF" />
-        </LinearGradient>
-        <Text style={styles.headerTitle}>JobPilot AI</Text>
-        <TouchableOpacity
-          style={styles.notifBtn}
-          onPress={() => router.push('/(tabs)/quick-actions/notifications' as any)}
-          activeOpacity={0.7}
-          accessibilityLabel="Notifications"
-          accessibilityRole="button"
-        >
-          <Ionicons name="notifications-outline" size={22} color={colors.text} />
-        </TouchableOpacity>
-      </View>
+      <GlobalHeader />
       <View style={styles.tabsContent}>
         <Tabs
           tabBar={(props) => <TabBar {...props} />}
@@ -143,48 +113,6 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingBottom: 8,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(59,130,246,0.06)',
-    zIndex: 10,
-  },
-  hamburgerBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  headerLogoSmall: {
-    width: 28,
-    height: 28,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.xs,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
-  },
-  notifBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   tabsContent: {
     flex: 1,
   },

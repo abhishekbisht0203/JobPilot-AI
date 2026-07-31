@@ -33,10 +33,14 @@ export default function FounderCard({ founder }) {
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6">
             <div className="relative shrink-0">
               <div className={cn(
-                "h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg",
+                "h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg overflow-hidden",
                 founder.avatarColor || "from-blue-500 to-cyan-500"
               )}>
-                <span className="text-3xl sm:text-4xl font-bold text-white">{founder.avatarInitials}</span>
+                {founder.photo ? (
+                  <img src={founder.photo} alt={founder.name} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-3xl sm:text-4xl font-bold text-white">{founder.avatarInitials}</span>
+                )}
               </div>
               <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-800 flex items-center justify-center">
                 <div className="h-2.5 w-2.5 rounded-full bg-white" />

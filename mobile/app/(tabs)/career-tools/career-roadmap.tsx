@@ -15,6 +15,7 @@ import { Loader } from '../../../components/ui/Loader';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import { ScreenHeader, SectionHeader, GradientButton, TabBar, StatCard, ProgressBar, InfoCard, EmptyToolState } from '../../../components/career-tools';
 import { RoadmapCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
+import { CareerRoadmapIllus } from '../../../components/career-tools/illustrations';
 import { aiApi } from '../../../lib/api';
 import { SkillGapAnalysis } from '../../../types';
 
@@ -311,11 +312,11 @@ export default function CareerRoadmapScreen() {
         <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
           <GradientCard
             colors={HERO_GRADIENT}
-            icon="flag"
+            illustration={<CareerRoadmapIllus />}
             title="Your personalized career roadmap"
             subtitle="A step-by-step guide to reach your dream role"
           >
-            <FeatureList items={HERO_FEATURES} color="#FBCFE8" />
+            <FeatureList items={HERO_FEATURES} />
           </GradientCard>
         </Animated.View>
 

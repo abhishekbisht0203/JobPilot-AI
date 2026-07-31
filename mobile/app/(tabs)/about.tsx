@@ -1,12 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Animated, {
-  FadeInDown, FadeInUp, useSharedValue, withSpring, withTiming, useAnimatedStyle, Easing,
+  FadeInDown, FadeInUp,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
@@ -25,13 +25,6 @@ interface Stat {
   suffix?: string;
   icon: string;
   color: string;
-  gradient: readonly [string, string];
-}
-
-interface TeamMember {
-  name: string;
-  role: string;
-  initials: string;
   gradient: readonly [string, string];
 }
 
@@ -69,6 +62,31 @@ const ROLE_GRADIENT = ['#059669', '#0D9488'] as const;
 
 const FOUNDERS: Founder[] = [
   {
+    name: 'Abhishek Bisht',
+    initials: 'AB',
+    avatarGradient: colors.gradient.purple,
+    photo: require('../../assets/founders/abhishek-bisht.jpg'),
+    position: 'CEO & Co-Founder',
+    specialties: 'AI Engineer • Software Engineer • Full Stack Developer',
+    bio: 'Abhishek Bisht is the CEO & Co-Founder of JobPilot AI, an AI-powered career platform built to simplify job searching and career growth. As an AI Engineer and Software Engineer, he designs and ships intelligent products end-to-end — from AI-driven job matching, resume analysis and cover letter generation to scalable backend systems and modern frontends. He has built and deployed multiple products, including JobPilot AI, AI Research Copilot, and an AI-powered e-commerce platform, combining deep technical expertise with product vision to create career solutions used by job seekers worldwide.',
+    skills: ['Artificial Intelligence', 'Machine Learning', 'Full Stack Development', 'React', 'Next.js', 'Python', 'Node.js', 'Django', 'FastAPI', 'PostgreSQL', 'MongoDB', 'Docker', 'LangChain', 'LangGraph', 'RAG', 'MCP', 'Cloud Computing', 'Product Strategy', 'UI/UX Design'],
+    badges: [
+      { label: 'Full Stack', icon: 'ribbon', gradient: FULL_STACK_GRADIENT },
+      { label: 'AI/ML', icon: 'sparkles', gradient: AI_ML_GRADIENT },
+      { label: 'Leadership', icon: 'code-slash', gradient: ROLE_GRADIENT },
+    ],
+    linkedInUrl: 'https://linkedin.com/in/abhishek-bisht-876541308/',
+    githubUrl: 'https://github.com/abhishekbisht0203',
+    portfolioUrl: 'https://abhishekbisht.vercel.app/',
+    email: 'abhiyanshbisht@gmail.com',
+    phone: '+91 7456849590',
+    projects: [
+      { name: 'JobPilot AI', url: 'https://job-pilot-web-three.vercel.app/' },
+      { name: 'AI Research Copilot', url: 'https://abryx-ai.vercel.app/' },
+      { name: 'E-Commerce', url: 'https://ecommerce-shopiq.vercel.app/' },
+    ],
+  },
+  {
     name: 'Darshan Goswami',
     initials: 'DG',
     avatarGradient: colors.gradient.blue,
@@ -86,33 +104,6 @@ const FOUNDERS: Founder[] = [
     portfolioUrl: 'https://darshangoswami.com',
     email: 'darshan@jobpilot.ai',
   },
-  {
-    name: 'Abhishek Bisht',
-    initials: 'AB',
-    avatarGradient: colors.gradient.purple,
-    position: 'CEO & Co-Founder',
-    specialties: 'Full Stack Developer • Software Engineer • AI/ML Engineer • Product Strategist',
-    bio: 'Abhishek Bisht leads the overall vision, product strategy, business development, and growth of JobPilot AI. He also works as a Full Stack Developer, managing the database, backend, and frontend of the JobPilot AI platform. He works closely on AI-driven innovation, user experience, and building a world-class platform that connects job seekers with the best career opportunities through intelligent automation.',
-    skills: ['Artificial Intelligence', 'Machine Learning', 'Full Stack Development', 'React', 'Next.js', 'Python', 'Node.js', 'Django', 'PostgreSQL', 'MongoDB', 'Product Management', 'UI/UX Design', 'Cloud Computing', 'Business Strategy'],
-    badges: [
-      { label: 'Full Stack', icon: 'ribbon', gradient: FULL_STACK_GRADIENT },
-      { label: 'AI/ML', icon: 'sparkles', gradient: AI_ML_GRADIENT },
-      { label: 'Leadership', icon: 'code-slash', gradient: ROLE_GRADIENT },
-    ],
-    linkedInUrl: 'https://linkedin.com/in/abhishek-bisht',
-    githubUrl: 'https://github.com/abhishekbisht',
-    portfolioUrl: 'https://abhishekbisht.com',
-    email: 'abhishek@jobpilot.ai',
-  },
-];
-
-const TEAM: TeamMember[] = [
-  { name: 'Alex Rivera', role: 'CEO & Co-Founder', initials: 'AR', gradient: colors.gradient.blue },
-  { name: 'Sarah Chen', role: 'CTO & Co-Founder', initials: 'SC', gradient: colors.gradient.purple },
-  { name: 'Marcus Johnson', role: 'Head of AI', initials: 'MJ', gradient: colors.gradient.coral },
-  { name: 'Priya Sharma', role: 'Head of Product', initials: 'PS', gradient: colors.gradient.sunset },
-  { name: 'David Kim', role: 'Lead Engineer', initials: 'DK', gradient: colors.gradient.teal },
-  { name: 'Emma Williams', role: 'Head of Design', initials: 'EW', gradient: colors.gradient.indigo },
 ];
 
 const TESTIMONIALS: Testimonial[] = [
@@ -174,30 +165,6 @@ function StatCard({ stat, index }: { stat: Stat; index: number }) {
           <Text style={styles.statLabel}>{stat.label}</Text>
         </View>
       </BlurView>
-    </Animated.View>
-  );
-}
-
-function TeamCard({ member, index }: { member: TeamMember; index: number }) {
-  const scale = useSharedValue(1);
-
-  return (
-    <Animated.View entering={FadeInUp.delay(500 + index * 60).springify().damping(14)} style={{ width: '47%' }}>
-      <TouchableOpacity
-        onPressIn={() => { scale.value = withSpring(0.95, { stiffness: 400, damping: 12 }); }}
-        onPressOut={() => { scale.value = withSpring(1, { stiffness: 300, damping: 15 }); }}
-        activeOpacity={1}
-      >
-        <Animated.View style={{ transform: [{ scale }] }}>
-          <BlurView intensity={45} tint="light" style={styles.teamCard}>
-            <LinearGradient colors={member.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.teamAvatar}>
-              <Text style={styles.teamInitials}>{member.initials}</Text>
-            </LinearGradient>
-            <Text style={styles.teamName}>{member.name}</Text>
-            <Text style={styles.teamRole}>{member.role}</Text>
-          </BlurView>
-        </Animated.View>
-      </TouchableOpacity>
     </Animated.View>
   );
 }
@@ -378,15 +345,6 @@ export default function AboutScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(500).springify().damping(14)}>
-          <Text style={styles.sectionTitle}>Meet the Team</Text>
-          <View style={styles.teamGrid}>
-            {TEAM.map((member, index) => (
-              <TeamCard key={member.name} member={member} index={index} />
-            ))}
-          </View>
-        </Animated.View>
-
         <Animated.View entering={FadeInDown.delay(550).springify().damping(14)}>
           <Text style={styles.sectionTitle}>What Our Users Say</Text>
           {TESTIMONIALS.map((testimonial, index) => (
@@ -459,18 +417,6 @@ const styles = StyleSheet.create({
   },
   timelineTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
   timelineDesc: { fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
-  teamGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  teamCard: {
-    borderRadius: borderRadius.xl, overflow: 'hidden',
-    padding: spacing.md, alignItems: 'center', ...shadow.md,
-  },
-  teamAvatar: {
-    width: 64, height: 64, borderRadius: 20,
-    justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm,
-  },
-  teamInitials: { color: '#FFF', fontSize: 22, fontWeight: '700' },
-  teamName: { fontSize: 15, fontWeight: '600', color: colors.text, textAlign: 'center' },
-  teamRole: { fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 2 },
   testimonialCard: { padding: spacing.md, marginBottom: spacing.sm },
   testimonialStars: { flexDirection: 'row', gap: 2, marginBottom: spacing.sm },
   testimonialText: { fontSize: 14, color: colors.textSecondary, lineHeight: 21, fontStyle: 'italic' },

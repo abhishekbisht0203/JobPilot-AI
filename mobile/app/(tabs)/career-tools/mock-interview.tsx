@@ -1,11 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
-import { colors, spacing, borderRadius, shadow } from '../../../lib/theme';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { colors, spacing, borderRadius } from '../../../lib/theme';
 import { useResponsive } from '../../../lib/responsive';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import {
@@ -13,15 +10,15 @@ import {
   CTSectionHeader, LoadingState,
 } from '../../../components/career-tools/shared';
 import { ScreenHeader } from '../../../components/career-tools';
+import { MockInterviewIllus } from '../../../components/career-tools/illustrations';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_GRADIENT = colors.tool.mockInterview;
 
 const FEATURES = [
-  { icon: 'chatbubbles', text: 'AI-powered interview simulation' },
-  { icon: 'mic', text: 'Real-time voice feedback' },
-  { icon: 'chatbox-ellipses', text: 'Communication analysis' },
-  { icon: 'trending-up', text: 'Track your progress over time' },
+  { icon: 'chatbubbles', text: 'AI Interview' },
+  { icon: 'mic', text: 'Communication' },
+  { icon: 'chatbox-ellipses', text: 'Feedback' },
+  { icon: 'trending-up', text: 'Track Progress' },
 ];
 
 const MOCK_SESSIONS = [
@@ -35,19 +32,6 @@ export default function MockInterviewScreen() {
   const { horizontalPadding } = useResponsive();
   const [loading, setLoading] = useState(false);
 
-  const floatY = useSharedValue(0);
-  useEffect(() => {
-    floatY.value = withRepeat(
-      withSequence(
-        withTiming(-8, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
-        withTiming(8, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1, true,
-    );
-  }, []);
-
-  const floatStyle = useAnimatedStyle(() => ({ transform: [{ translateY: floatY.value }] }));
-
   return (
     <View style={styles.container}>
       <ScreenHeader title="Mock Interview" subtitle="Practice with AI Interviewer" icon="mic" iconColors={HERO_GRADIENT} />
@@ -56,25 +40,18 @@ export default function MockInterviewScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInUp.delay(100).springify().damping(14)}>
-          <LinearGradient colors={HERO_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>AI Interviewer</Text>
-              <Text style={styles.heroSub}>Real-time feedback to improve your communication</Text>
-              <FeatureList items={FEATURES} color="#86EFAC" />
-            </View>
-            <Animated.View style={[styles.heroIllustration, floatStyle]}>
-              <View style={styles.robotIcon}>
-                <Ionicons name="mic-circle" size={64} color="rgba(255,255,255,0.15)" />
-              </View>
-              <View style={styles.floatingDot1} />
-              <View style={styles.floatingDot2} />
-            </Animated.View>
-          </LinearGradient>
+          <GradientCard
+            colors={HERO_GRADIENT}
+            illustration={<MockInterviewIllus />}
+            title="Practice with AI Interviewer"
+          >
+            <FeatureList items={FEATURES} />
+          </GradientCard>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(200).springify().damping(14)} style={{ marginTop: spacing.lg }}>
           <PrimaryButton
-            title="Start Interview"
+            title="Start Mock Interview"
             icon="mic"
             onPress={() => router.push('/ai/mock-interview' as any)}
             gradient={HERO_GRADIENT}
@@ -111,18 +88,5 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     overflow: 'hidden',
     flexDirection: 'row',
-    ...shadow.lg,
-  },
-  heroTitle: { color: '#FFF', fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },
-  heroSub: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 20 },
-  heroIllustration: { marginLeft: spacing.md, justifyContent: 'center', alignItems: 'center', width: 80 },
-  robotIcon: { alignItems: 'center' },
-  floatingDot1: {
-    position: 'absolute', width: 12, height: 12, borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)', top: 0, right: 0,
-  },
-  floatingDot2: {
-    position: 'absolute', width: 8, height: 8, borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)', bottom: 10, left: 0,
   },
 });

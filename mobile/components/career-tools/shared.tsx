@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -6,8 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { TextInput } from 'react-native';
 import Animated, {
   FadeInDown, FadeInUp, FadeInLeft, FadeInRight,
-  useSharedValue, useAnimatedStyle, withSpring, withTiming,
-  interpolate, Extrapolation,
+  useSharedValue, useAnimatedStyle, withSpring, withTiming, withRepeat, withSequence,
+  interpolate, Extrapolation, Easing,
 } from 'react-native-reanimated';
 
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
@@ -37,37 +37,40 @@ export function AnimatedCard({ children, delay = 0, index, style, onPress }: {
 }
 
 // ─── GradientCard ────────────────────────────────────────────
-export function GradientCard({ children, colors: gradColors, icon, title, subtitle, style, height }: {
-  children?: React.ReactNode; colors: readonly [string, string]; icon?: string; title?: string; subtitle?: string;
-  style?: ViewStyle; height?: number;
+export function GradientCard({ children, colors: gradColors, icon, illustration, title, subtitle, style, height }: {
+  children?: React.ReactNode; colors: readonly [string, string]; icon?: string; illustration?: React.ReactNode;
+  title?: string; subtitle?: string; style?: ViewStyle; height?: number;
 }) {
   return (
     <LinearGradient colors={gradColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.gradientCard, height ? { height } : {}, style]}>
+      <View style={[styles.gcDecoCircle, { top: -40, right: -30, width: 130, height: 130 }]} />
+      <View style={[styles.gcDecoCircle, { bottom: -50, left: 60, width: 120, height: 120 }]} />
       <View style={styles.gcRow}>
         <View style={{ flex: 1 }}>
           {title && <Text style={styles.gcTitle}>{title}</Text>}
           {subtitle && <Text style={styles.gcSubtitle}>{subtitle}</Text>}
           {children}
         </View>
-        {icon && (
+        {illustration ? (
+          <View style={styles.gcIlluWrap}>{illustration}</View>
+        ) : icon ? (
           <View style={styles.gcIconWrap}>
             <Ionicons name={icon as any} size={48} color="rgba(255,255,255,0.2)" />
           </View>
-        )}
+        ) : null}
       </View>
     </LinearGradient>
   );
 }
 
 // ─── FeatureList ────────────────────────────────────────────
-export function FeatureList({ items, color }: { items: { icon: string; text: string }[]; color?: string }) {
-  const c = color || colors.primary;
+export function FeatureList({ items }: { items: { icon: string; text: string }[]; color?: string }) {
   return (
     <View style={styles.featureList}>
       {items.map((item, i) => (
         <Animated.View key={i} entering={FadeInLeft.delay(200 + i * 80).springify().damping(14)} style={styles.featureItem}>
-          <View style={[styles.fiIcon, { backgroundColor: c + '20' }]}>
-            <Ionicons name={item.icon as any} size={16} color={c} />
+          <View style={styles.fiIcon}>
+            <Ionicons name={item.icon as any} size={13} color="#FFF" />
           </View>
           <Text style={styles.fiText}>{item.text}</Text>
         </Animated.View>
@@ -77,14 +80,22 @@ export function FeatureList({ items, color }: { items: { icon: string; text: str
 }
 
 // ─── UploadCard ──────────────────────────────────────────────
-export function UploadCard({ onPress, uploading, uploaded, label }: {
-  onPress: () => void; uploading?: boolean; uploaded?: boolean; label?: string;
+export function UploadCard({ onPress, uploading, uploaded, label, gradient = ['#0A66C2', '#2563EB'] }: {
+  onPress: () => void; uploading?: boolean; uploaded?: boolean; label?: string; gradient?: readonly [string, string];
 }) {
   const pulse = useSharedValue(1);
-  if (uploading) {
-    pulse.value = withSpring(1.05, { stiffness: 100, damping: 4 });
-  }
+  useEffect(() => {
+    if (uploading) {
+      pulse.value = withRepeat(withSequence(
+        withTiming(1.04, { duration: 700, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 700, easing: Easing.inOut(Easing.sin) }),
+      ), -1, true);
+    } else {
+      pulse.value = withSpring(1, { stiffness: 200, damping: 12 });
+    }
+  }, [uploading, pulse]);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
+  const [g1, g2] = gradient;
 
   return (
     <TouchableOpacity onPress={onPress} disabled={uploading} activeOpacity={0.8}>
@@ -94,7 +105,7 @@ export function UploadCard({ onPress, uploading, uploaded, label }: {
             <View style={[styles.ucIconWrap, { backgroundColor: uploaded ? colors.successLight + '80' : colors.primaryBg }]}>
               <Ionicons
                 name={uploaded ? 'checkmark-circle' : uploading ? 'hourglass-outline' : 'cloud-upload-outline'}
-                size={32}
+                size={34}
                 color={uploaded ? colors.success : uploading ? colors.warning : colors.primary}
               />
             </View>
@@ -104,6 +115,12 @@ export function UploadCard({ onPress, uploading, uploaded, label }: {
             <Text style={styles.ucSub}>
               {uploading ? 'Please wait...' : uploaded ? 'Tap to upload another' : 'PDF, DOCX, or TXT'}
             </Text>
+            {!uploading && (
+              <LinearGradient colors={[g1, g2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.ucBtn}>
+                <Ionicons name={uploaded ? 'refresh' : 'cloud-upload-outline'} size={16} color="#FFF" />
+                <Text style={styles.ucBtnText}>{uploaded ? 'Upload Another' : 'Choose File'}</Text>
+              </LinearGradient>
+            )}
           </View>
         </BlurView>
       </Animated.View>
@@ -163,7 +180,8 @@ export function ResumeCard({ name, date, score, onPress, gradientColors }: {
           <Text style={styles.rcName} numberOfLines={1}>{name}</Text>
           <Text style={styles.rcDate}>{date}</Text>
         </View>
-        <BadgePill label={`${score}%`} variant={sc as any} />
+        <BadgePill label={`${score}% ATS`} variant={sc} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={styles.rcArrow} />
       </BlurView>
     </AnimatedCard>
   );
@@ -210,6 +228,7 @@ export function SessionCard({ title, duration, date, score, onPress, gradientCol
           </View>
         </View>
         <BadgePill label={`${score}%`} variant={sc} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={styles.rcArrow} />
       </BlurView>
     </AnimatedCard>
   );
@@ -385,26 +404,34 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadow.lg,
   },
+  gcDecoCircle: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)' },
   gcRow: { flexDirection: 'row', alignItems: 'center' },
-  gcTitle: { color: '#FFF', fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },
-  gcSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: spacing.xs, lineHeight: 20 },
+  gcTitle: { color: '#FFF', fontSize: 22, fontWeight: '800', letterSpacing: -0.5, lineHeight: 28 },
+  gcSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 14, marginTop: spacing.xs, lineHeight: 20 },
   gcIconWrap: { marginLeft: spacing.md, opacity: 0.6 },
+  gcIlluWrap: { marginLeft: spacing.xs, width: 124, height: 140, justifyContent: 'center', alignItems: 'center' },
   featureList: { gap: spacing.sm, marginTop: spacing.md },
   featureItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  fiIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  fiText: { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: '500', flex: 1 },
+  fiIcon: { width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  fiText: { fontSize: 13, color: 'rgba(255,255,255,0.95)', fontWeight: '500', flex: 1 },
   uploadCard: {
     borderRadius: borderRadius.xl,
-    padding: spacing.xl,
+    padding: spacing.lg,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: colors.primary + '30',
     borderStyle: 'dashed',
   },
   ucContent: { alignItems: 'center', gap: spacing.sm },
-  ucIconWrap: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center' },
+  ucIconWrap: { width: 68, height: 68, borderRadius: 34, justifyContent: 'center', alignItems: 'center' },
   ucTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
   ucSub: { fontSize: 13, color: colors.textMuted },
+  ucBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs,
+    marginTop: spacing.xs, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.full, ...shadow.sm,
+  },
+  ucBtnText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
   searchBar: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
@@ -427,6 +454,7 @@ const styles = StyleSheet.create({
   rcIcon: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   rcName: { fontSize: 15, fontWeight: '600', color: colors.text },
   rcDate: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  rcArrow: { marginLeft: spacing.xs, opacity: 0.7 },
   badgePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: borderRadius.full, alignSelf: 'flex-start' },
   badgePillText: { fontSize: 12, fontWeight: '600' },
   sessionCard: {

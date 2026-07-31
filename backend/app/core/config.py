@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: Optional[str] = None
 
     SENDGRID_API_KEY: Optional[str] = None
     FROM_EMAIL: str = "noreply@jobpilot.ai"

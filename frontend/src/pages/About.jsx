@@ -165,8 +165,9 @@ export default function About() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
             <FounderCard founder={{
               name: "Abhishek Bisht",
-              position: "CTO & Co-Founder",
-              role: "Software Engineer • AI/ML Engineer • Full Stack Developer",
+              position: "CEO & Co-Founder",
+              role: "AI Engineer • Software Engineer • Full Stack Developer",
+              photo: "/founders/abhishek-bisht.jpg",
               bio: "Abhishek Bisht is responsible for the technology, AI systems, backend architecture, and product engineering of JobPilot Ai. He specializes in Full Stack Development, Artificial Intelligence, Machine Learning, scalable backend systems, cloud deployment, and modern web technologies. His vision is to build AI-powered career solutions that simplify job searching and career growth for millions of users.",
               skills: ["Artificial Intelligence", "Machine Learning", "Full Stack Development", "React", "Next.js", "FastAPI", "Django", "Node.js", "PostgreSQL", "Docker", "LangChain", "LangGraph", "RAG", "MCP", "Cloud Computing"],
               avatarInitials: "AB",

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
@@ -13,10 +13,13 @@ export interface Founder {
   bio: string;
   skills: string[];
   badges: { label: string; icon: keyof typeof Ionicons.glyphMap; gradient: readonly [string, string] }[];
+  photo?: any;
   linkedInUrl?: string;
   githubUrl?: string;
   portfolioUrl?: string;
   email?: string;
+  phone?: string;
+  projects?: { name: string; url: string }[];
 }
 
 const FOUNDER_STATS = [
@@ -30,6 +33,7 @@ const SOCIAL_LINKS = [
   { key: 'githubUrl', label: 'GitHub', icon: 'logo-github' as const },
   { key: 'portfolioUrl', label: 'Portfolio', icon: 'globe-outline' as const },
   { key: 'email', label: 'Email', icon: 'mail-outline' as const },
+  { key: 'phone', label: 'Phone', icon: 'call-outline' as const },
 ] as const;
 
 const VISIBLE_SKILLS = 6;
@@ -41,7 +45,9 @@ export function FounderCard({ founder }: { founder: Founder }) {
   const openSocial = (key: string) => {
     const value = (founder as any)[key];
     if (!value) return;
-    const url = key === 'email' ? `mailto:${value}` : value;
+    let url = value;
+    if (key === 'email') url = `mailto:${value}`;
+    else if (key === 'phone') url = `tel:${value.replace(/[^+\d]/g, '')}`;
     Linking.openURL(url).catch(() => {});
   };
 
@@ -50,7 +56,11 @@ export function FounderCard({ founder }: { founder: Founder }) {
       <View style={styles.header}>
         <View style={styles.avatarWrap}>
           <LinearGradient colors={founder.avatarGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatar}>
-            <Text style={styles.avatarInitials}>{founder.initials}</Text>
+            {founder.photo ? (
+              <Image source={founder.photo} style={styles.avatarImage} resizeMode="cover" />
+            ) : (
+              <Text style={styles.avatarInitials}>{founder.initials}</Text>
+            )}
           </LinearGradient>
           <View style={styles.statusDot}>
             <View style={styles.statusDotInner} />
@@ -103,6 +113,25 @@ export function FounderCard({ founder }: { founder: Founder }) {
         ))}
       </View>
 
+      {founder.projects && founder.projects.length > 0 && (
+        <View style={styles.projectsSection}>
+          <Text style={styles.projectsLabel}>Projects</Text>
+          <View style={styles.projectsRow}>
+            {founder.projects.map((p) => (
+              <TouchableOpacity
+                key={p.name}
+                style={styles.projectChip}
+                onPress={() => Linking.openURL(p.url).catch(() => {})}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="link-outline" size={12} color={colors.primary} />
+                <Text style={styles.projectChipText}>{p.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View style={styles.socialRow}>
         {SOCIAL_LINKS.filter((s) => (founder as any)[s.key]).map((social) => (
           <TouchableOpacity
@@ -136,6 +165,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', ...shadow.md,
   },
   avatarInitials: { color: '#FFF', fontSize: 26, fontWeight: '800' },
+  avatarImage: {
+    width: '100%', height: '100%',
+    borderRadius: borderRadius.xl,
+  },
   statusDot: {
     position: 'absolute', bottom: -4, right: -4,
     width: 24, height: 24, borderRadius: 12,
@@ -175,6 +208,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: borderRadius.full,
   },
   badgeText: { fontSize: 11.5, fontWeight: '700', color: '#FFF' },
+  projectsSection: { marginBottom: spacing.md },
+  projectsLabel: { fontSize: 11, fontWeight: '700', color: colors.textMuted, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 },
+  projectsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  projectChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: borderRadius.md,
+    backgroundColor: colors.primaryBg, borderWidth: 1, borderColor: colors.border,
+  },
+  projectChipText: { fontSize: 11, fontWeight: '600', color: colors.primary },
   socialRow: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 8,
     paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.borderLight,

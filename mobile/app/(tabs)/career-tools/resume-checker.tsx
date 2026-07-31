@@ -14,6 +14,7 @@ import {
   ScreenHeader, GradientButton, AnimatedScoreRing, SectionHeader, TabBar, InfoCard, EmptyToolState
 } from '../../../components/career-tools';
 import { UploadCard, AnimatedCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
+import { ResumeCheckerIllus } from '../../../components/career-tools/illustrations';
 import { resumeApi } from '../../../lib/api';
 import { Resume } from '../../../types';
 import { formatDate } from '../../../lib/helpers';
@@ -249,8 +250,8 @@ function GrammarTab({ analysis }: { analysis: AnalysisResult }) {
       {spelling.map((s, i) => (
         <Animated.View key={`sp-${i}`} entering={FadeInDown.delay((issues.length + i) * 40).springify()}>
           <BlurView intensity={40} tint="light" style={[styles.issueCard, { borderLeftColor: colors.error, borderLeftWidth: 3 }]}>
-            <Text style={styles.issueTitle}>Spelling: "{s.word}"</Text>
-            <Text style={styles.issueSuggestion}>Correct to "{s.suggestion}"</Text>
+            <Text style={styles.issueTitle}>{`Spelling: "${s.word}"`}</Text>
+            <Text style={styles.issueSuggestion}>{`Correct to "${s.suggestion}"`}</Text>
             <Badge label="spelling" variant="error" size="sm" />
           </BlurView>
         </Animated.View>
@@ -471,16 +472,15 @@ export default function ResumeCheckerScreen() {
         <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
           <GradientCard
             colors={HERO_GRADIENT}
-            icon="shield-checkmark"
-            title="Improve your resume"
-            subtitle="Get AI suggestions to boost your score"
+            illustration={<ResumeCheckerIllus />}
+            title="Improve your resume with AI suggestions"
           >
-            <FeatureList items={HERO_FEATURES} color="#99F6E4" />
+            <FeatureList items={HERO_FEATURES} />
           </GradientCard>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(120).springify().damping(14)} style={styles.uploadSection}>
-          <UploadCard onPress={handleUpload} uploading={uploading} uploaded={resumes.length > 0} label="Upload Resume for Analysis" />
+          <UploadCard onPress={handleUpload} uploading={uploading} uploaded={resumes.length > 0} label="Upload Resume for Analysis" gradient={HERO_GRADIENT} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(120).springify().damping(14)}>
@@ -535,7 +535,7 @@ export default function ResumeCheckerScreen() {
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(200).springify().damping(14)}>
-              <SectionHeader title="Select Resume" icon="documents-outline" />
+              <SectionHeader title="Recent Reports" icon="documents-outline" badge={resumes.length} />
             </Animated.View>
             {resumes.map((resume, index) => {
               const sc = resume.ats_score || 0;
@@ -551,7 +551,8 @@ export default function ResumeCheckerScreen() {
                       <Text style={styles.resumeName} numberOfLines={1}>{resume.original_filename}</Text>
                       <Text style={styles.resumeDate}>{formatDate(resume.created_at || '')}</Text>
                     </View>
-                    <BadgePill label={`${sc}%`} variant={v} />
+                    <BadgePill label={`${sc}% ATS`} variant={v} />
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={styles.chevron} />
                   </BlurView>
                 </TouchableOpacity>
               </AnimatedCard>
@@ -618,6 +619,7 @@ const styles = StyleSheet.create({
   resumeInfo: { flex: 1, marginLeft: spacing.sm },
   resumeName: { fontSize: 14, fontWeight: '600', color: colors.text },
   resumeDate: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+  chevron: { marginLeft: spacing.xs, opacity: 0.7 },
   uploadSection: { marginBottom: spacing.md, marginTop: spacing.md },
   jdCard: { padding: spacing.md, borderRadius: borderRadius.xl, marginBottom: spacing.md, overflow: 'hidden' },
   jdLabel: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: spacing.sm },

@@ -21,6 +21,7 @@ import {
   ScreenHeader, SectionHeader, StatCard, InfoCard, ChipFilter, TabBar, GradientButton, EmptyToolState
 } from '../../../components/career-tools';
 import { SearchBar, AnimatedCard, SalaryCard, BadgePill, GradientCard, FeatureList } from '../../../components/career-tools/shared';
+import { SalaryExplorerIllus } from '../../../components/career-tools/illustrations';
 
 const HERO_GRADIENT = colors.tool.salaryExplorer;
 const HERO_FEATURES = [
@@ -167,11 +168,11 @@ export default function SalaryExplorerScreen() {
         <Animated.View entering={FadeInUp.delay(60).springify().damping(14)}>
           <GradientCard
             colors={HERO_GRADIENT}
-            icon="globe"
+            illustration={<SalaryExplorerIllus />}
             title="Explore salaries for top roles"
             subtitle="Real insights from live job listings worldwide"
           >
-            <FeatureList items={HERO_FEATURES} color="#FED7AA" />
+            <FeatureList items={HERO_FEATURES} />
           </GradientCard>
         </Animated.View>
 

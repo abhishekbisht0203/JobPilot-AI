@@ -6,16 +6,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, shadow } from '../../lib/theme';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { Badge } from '../../components/ui/Badge';
 import { Loader } from '../../components/ui/Loader';
 import { aiApi } from '../../lib/api';
 import {
-  ToolHeader, GradientButton, SectionHeader, TabBar,
+  ScreenHeader, GradientButton, SectionHeader, TabBar,
   AnimatedScoreRing, InfoCard, ProgressBar, EmptyToolState,
 } from '../../components/career-tools';
+import {
+  GradientCard, FeatureList, PrimaryButton, CTSectionHeader,
+} from '../../components/career-tools/shared';
+import { MockInterviewIllus } from '../../components/career-tools/illustrations';
+import { GlobalHeader } from '../../components/GlobalHeader';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 type QuestionStatus = 'correct' | 'partial' | 'incorrect' | 'unanswered';
@@ -52,6 +56,15 @@ interface InterviewSession {
   questions: QuestionResult[];
   overallScore: number;
 }
+
+const HERO_GRADIENT = ['#059669', '#10B981'] as const;
+
+const HERO_FEATURES = [
+  { icon: 'mic', text: 'AI Interviewer' },
+  { icon: 'chatbubbles', text: 'Real Questions' },
+  { icon: 'flash', text: 'Instant Feedback' },
+  { icon: 'trending-up', text: 'Track Progress' },
+];
 
 const CATEGORIES: Category[] = [
   { id: 'general', name: 'General', icon: 'chatbubbles', color: colors.accent.blue, gradient: ['#0A66C2', '#2563EB'] as const, description: 'Common interview questions for any role' },
@@ -163,8 +176,6 @@ function evaluateAnswer(answer: string, _question: string): { score: number; sta
 }
 
 export default function MockInterviewScreen() {
-  const insets = useSafeAreaInsets();
-
   const [view, setView] = useState<ViewState>('welcome');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
@@ -299,7 +310,7 @@ export default function MockInterviewScreen() {
   const renderCategoryCard = (cat: Category, idx: number) => {
     const isSelected = selectedCategory?.id === cat.id;
     return (
-      <Animated.View key={cat.id} entering={FadeInDown.delay(idx * 80).springify().damping(14)} style={{ width: '48%' }}>
+      <Animated.View key={cat.id} entering={FadeInDown.delay(idx * 80).springify().damping(14)} style={styles.catWrap}>
         <TouchableOpacity onPress={() => setSelectedCategory(isSelected ? null : cat)} activeOpacity={0.8}>
           <BlurView intensity={40} tint="light" style={[styles.catCard, isSelected && { borderColor: cat.color, borderWidth: 2 }]}>
             <LinearGradient colors={cat.gradient} style={styles.catIcon}>
@@ -320,92 +331,99 @@ export default function MockInterviewScreen() {
 
   const renderWelcome = () => (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-      <ToolHeader title="Mock Interview" subtitle="AI-powered interview practice" gradient={['#059669', '#10B981']} icon="mic" />
+      <ScreenHeader title="Mock Interview" subtitle="AI-powered interview practice" icon="mic" iconColors={HERO_GRADIENT} />
 
-      <View style={styles.section}>
-        <SectionHeader title="Category" icon="grid-outline" />
-        <View style={styles.catGrid}>
-          {CATEGORIES.map((cat, i) => renderCategoryCard(cat, i))}
+      <View style={styles.content}>
+        <GradientCard colors={HERO_GRADIENT} illustration={<MockInterviewIllus />} title="Practice with AI Interviewer">
+          <Text style={styles.heroSub}>Face real interview questions with instant AI feedback and score your performance.</Text>
+          <FeatureList items={HERO_FEATURES} />
+        </GradientCard>
+
+        <View style={styles.section}>
+          <CTSectionHeader title="Category" icon="grid-outline" />
+          <View style={styles.catGrid}>
+            {CATEGORIES.map((cat, i) => renderCategoryCard(cat, i))}
+          </View>
         </View>
-      </View>
 
-      <Animated.View entering={FadeInDown.delay(300).springify().damping(14)} style={styles.section}>
-        <SectionHeader title="Configuration" icon="settings-outline" />
-        <GlassCard style={styles.configCard}>
-          <View style={styles.configRow}>
-            <Text style={styles.configLabel}>Difficulty</Text>
-            <View style={styles.segmentRow}>
-              {DIFFICULTIES.map(d => (
-                <TouchableOpacity key={d.key} onPress={() => setDifficulty(d.key)} activeOpacity={0.7}
-                  style={[styles.segment, difficulty === d.key && styles.segmentActive]}>
-                  <Text style={[styles.segmentText, difficulty === d.key && styles.segmentTextActive]}>{d.label}</Text>
-                </TouchableOpacity>
-              ))}
+        <Animated.View entering={FadeInDown.delay(300).springify().damping(14)} style={styles.section}>
+          <CTSectionHeader title="Configuration" icon="settings-outline" />
+          <GlassCard style={styles.configCard}>
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Difficulty</Text>
+              <View style={styles.segmentRow}>
+                {DIFFICULTIES.map(d => (
+                  <TouchableOpacity key={d.key} onPress={() => setDifficulty(d.key)} activeOpacity={0.7}
+                    style={[styles.segment, difficulty === d.key && styles.segmentActive]}>
+                    <Text style={[styles.segmentText, difficulty === d.key && styles.segmentTextActive]}>{d.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
-          <View style={styles.configRow}>
-            <Text style={styles.configLabel}>Questions</Text>
-            <View style={styles.segmentRow}>
-              {QUESTION_COUNTS.map(n => (
-                <TouchableOpacity key={n} onPress={() => setQuestionCount(n)} activeOpacity={0.7}
-                  style={[styles.segment, questionCount === n && styles.segmentActive]}>
-                  <Text style={[styles.segmentText, questionCount === n && styles.segmentTextActive]}>{n}</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Questions</Text>
+              <View style={styles.segmentRow}>
+                {QUESTION_COUNTS.map(n => (
+                  <TouchableOpacity key={n} onPress={() => setQuestionCount(n)} activeOpacity={0.7}
+                    style={[styles.segment, questionCount === n && styles.segmentActive]}>
+                    <Text style={[styles.segmentText, questionCount === n && styles.segmentTextActive]}>{n}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
-          <View style={styles.configRow}>
-            <Text style={styles.configLabel}>Time per Q</Text>
-            <View style={styles.segmentRow}>
-              {TIME_OPTIONS.map(t => (
-                <TouchableOpacity key={t.value} onPress={() => setTimePerQuestion(t.value)} activeOpacity={0.7}
-                  style={[styles.segment, timePerQuestion === t.value && styles.segmentActive]}>
-                  <Text style={[styles.segmentText, timePerQuestion === t.value && styles.segmentTextActive]}>{t.label}</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.configRow}>
+              <Text style={styles.configLabel}>Time per Q</Text>
+              <View style={styles.segmentRow}>
+                {TIME_OPTIONS.map(t => (
+                  <TouchableOpacity key={t.value} onPress={() => setTimePerQuestion(t.value)} activeOpacity={0.7}
+                    style={[styles.segment, timePerQuestion === t.value && styles.segmentActive]}>
+                    <Text style={[styles.segmentText, timePerQuestion === t.value && styles.segmentTextActive]}>{t.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
-        </GlassCard>
-      </Animated.View>
-
-      <Animated.View entering={FadeInDown.delay(400).springify().damping(14)} style={styles.section}>
-        <SectionHeader title="Job Description" icon="document-text-outline" />
-        <GlassCard style={styles.descCard}>
-          <TextInput
-            style={styles.textArea}
-            placeholder="Paste the job description here to get tailored questions..."
-            placeholderTextColor={colors.textMuted}
-            value={jobDesc}
-            onChangeText={setJobDesc}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-          />
-        </GlassCard>
-      </Animated.View>
-
-      {error && (
-        <Animated.View entering={FadeInUp.springify().damping(14)} style={styles.errorBanner}>
-          <Ionicons name="alert-circle" size={16} color={colors.error} />
-          <Text style={styles.errorText}>{error}</Text>
+          </GlassCard>
         </Animated.View>
-      )}
 
-      <View style={styles.startBtnWrap}>
-        <GradientButton
-          title="Start Interview"
-          icon="play"
-          onPress={startInterview}
-          loading={loading}
-          disabled={!selectedCategory || !jobDesc.trim() || loading}
-          gradient={['#059669', '#10B981']}
-        />
-        {history.length > 0 && (
-          <TouchableOpacity onPress={() => { setHistorySession(null); setView('history'); }} style={styles.historyBtn}>
-            <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
-            <Text style={styles.historyBtnText}>History ({history.length})</Text>
-          </TouchableOpacity>
+        <Animated.View entering={FadeInDown.delay(400).springify().damping(14)} style={styles.section}>
+          <CTSectionHeader title="Job Description" icon="document-text-outline" />
+          <GlassCard style={styles.descCard}>
+            <TextInput
+              style={styles.textArea}
+              placeholder="Paste the job description here to get tailored questions..."
+              placeholderTextColor={colors.textMuted}
+              value={jobDesc}
+              onChangeText={setJobDesc}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+            />
+          </GlassCard>
+        </Animated.View>
+
+        {error && (
+          <Animated.View entering={FadeInUp.springify().damping(14)} style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={16} color={colors.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </Animated.View>
         )}
+
+        <View style={styles.startBtnWrap}>
+          <PrimaryButton
+            title="Start Mock Interview"
+            icon="mic"
+            onPress={startInterview}
+            loading={loading}
+            disabled={!selectedCategory || !jobDesc.trim() || loading}
+            gradient={HERO_GRADIENT}
+          />
+          {history.length > 0 && (
+            <TouchableOpacity onPress={() => { setHistorySession(null); setView('history'); }} style={styles.historyBtn}>
+              <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
+              <Text style={styles.historyBtnText}>History ({history.length})</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </ScrollView>
   );
@@ -418,9 +436,9 @@ export default function MockInterviewScreen() {
 
     return (
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <ToolHeader title="Mock Interview" subtitle={`${selectedCategory?.name || 'Interview'} · ${difficulty}`} gradient={['#059669', '#10B981']} icon="mic" />
+        <ScreenHeader title="Mock Interview" subtitle={`${selectedCategory?.name || 'Interview'} · ${difficulty}`} icon="mic" iconColors={HERO_GRADIENT} />
 
-        <View style={styles.section}>
+        <View style={styles.content}>
           <Animated.View key={currentIndex} entering={FadeInUp.springify().damping(14)}>
             <GlassCard style={styles.interviewCard}>
               <View style={styles.qHeader}>
@@ -464,7 +482,7 @@ export default function MockInterviewScreen() {
                 onPress={submitAnswer}
                 loading={submitting}
                 disabled={!answer.trim() || submitting}
-                gradient={['#059669', '#10B981']}
+                gradient={HERO_GRADIENT}
               />
 
               {currentIndex < total - 1 && (
@@ -480,12 +498,12 @@ export default function MockInterviewScreen() {
   };
 
   const renderEvaluating = () => (
-    <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+    <View style={styles.loadingContainer}>
       <Loader fullScreen message="Evaluating your answer..." />
       <View style={styles.evalSteps}>
         {['Analyzing response', 'Checking structure', 'Scoring quality', 'Generating feedback'].map((step, i) => (
           <Animated.View key={step} entering={FadeInUp.delay(i * 200).springify().damping(14)} style={styles.evalStep}>
-            <LinearGradient colors={['#059669', '#10B981']} style={styles.evalDot} />
+            <LinearGradient colors={HERO_GRADIENT} style={styles.evalDot} />
             <Text style={styles.evalStepText}>{step}...</Text>
           </Animated.View>
         ))}
@@ -501,98 +519,100 @@ export default function MockInterviewScreen() {
 
     return (
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <ToolHeader title="Interview Complete" subtitle="Here is your performance summary" gradient={['#059669', '#10B981']} icon="trophy" />
+        <ScreenHeader title="Interview Complete" subtitle="Here is your performance summary" icon="trophy" iconColors={HERO_GRADIENT} />
 
-        <Animated.View entering={FadeInDown.springify().damping(14)} style={styles.section}>
-          <GlassCard style={styles.scoreOverview}>
-            <AnimatedScoreRing score={overallScore} size={120} strokeWidth={8} label="Overall" />
-            <Text style={styles.scoreMessage}>{overallScore >= 80 ? 'Excellent!' : overallScore >= 60 ? 'Good Job!' : overallScore >= 40 ? 'Keep Practicing' : 'Needs Improvement'}</Text>
-            <View style={styles.breakdownRow}>
-              <View style={styles.breakdownItem}>
-                <Text style={[styles.breakdownNum, { color: colors.success }]}>{correct}</Text>
-                <Text style={styles.breakdownLabel}>Correct</Text>
-              </View>
-              <View style={styles.breakdownItem}>
-                <Text style={[styles.breakdownNum, { color: colors.warning }]}>{partial}</Text>
-                <Text style={styles.breakdownLabel}>Partial</Text>
-              </View>
-              <View style={styles.breakdownItem}>
-                <Text style={[styles.breakdownNum, { color: colors.error }]}>{incorrect}</Text>
-                <Text style={styles.breakdownLabel}>Incorrect</Text>
-              </View>
-              {unanswered > 0 && (
+        <View style={styles.content}>
+          <Animated.View entering={FadeInDown.springify().damping(14)} style={styles.section}>
+            <GlassCard style={styles.scoreOverview}>
+              <AnimatedScoreRing score={overallScore} size={120} strokeWidth={8} label="Overall" />
+              <Text style={styles.scoreMessage}>{overallScore >= 80 ? 'Excellent!' : overallScore >= 60 ? 'Good Job!' : overallScore >= 40 ? 'Keep Practicing' : 'Needs Improvement'}</Text>
+              <View style={styles.breakdownRow}>
                 <View style={styles.breakdownItem}>
-                  <Text style={[styles.breakdownNum, { color: colors.textMuted }]}>{unanswered}</Text>
-                  <Text style={styles.breakdownLabel}>Unanswered</Text>
+                  <Text style={[styles.breakdownNum, { color: colors.success }]}>{correct}</Text>
+                  <Text style={styles.breakdownLabel}>Correct</Text>
                 </View>
-              )}
-            </View>
-          </GlassCard>
-        </Animated.View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Question Review" icon="list-outline" />
-          {results.map((r, i) => (
-            <Animated.View key={i} entering={FadeInDown.delay(i * 100).springify().damping(14)}>
-              <GlassCard style={styles.reviewCard}>
-                <View style={styles.reviewHeader}>
-                  <View style={styles.reviewQMeta}>
-                    <Text style={styles.reviewQNum}>Q{i + 1}</Text>
-                    <StatusBadge status={r.status} />
-                  </View>
-                  <Text style={[styles.reviewScore, { color: r.score >= 7 ? colors.success : r.score >= 4 ? colors.warning : colors.error }]}>{r.score}/10</Text>
+                <View style={styles.breakdownItem}>
+                  <Text style={[styles.breakdownNum, { color: colors.warning }]}>{partial}</Text>
+                  <Text style={styles.breakdownLabel}>Partial</Text>
                 </View>
-                <Text style={styles.reviewQuestion}>{r.question}</Text>
-
-                <View style={styles.reviewSection}>
-                  <Text style={styles.reviewSectionLabel}>Your Answer:</Text>
-                  <Text style={styles.reviewSectionText}>{r.answer || 'No answer provided'}</Text>
+                <View style={styles.breakdownItem}>
+                  <Text style={[styles.breakdownNum, { color: colors.error }]}>{incorrect}</Text>
+                  <Text style={styles.breakdownLabel}>Incorrect</Text>
                 </View>
-
-                <View style={[styles.reviewSection, styles.idealSection]}>
-                  <Text style={styles.idealLabel}>Ideal Answer:</Text>
-                  <Text style={styles.idealText}>{r.idealAnswer}</Text>
-                </View>
-
-                <View style={[styles.reviewSection, styles.feedbackSection]}>
-                  <Text style={styles.feedbackLabel}>AI Feedback:</Text>
-                  <Text style={styles.feedbackText}>{r.feedback}</Text>
-                </View>
-
-                {r.suggestions.length > 0 && (
-                  <View style={styles.reviewSection}>
-                    <Text style={styles.suggestionsLabel}>Suggestions:</Text>
-                    {r.suggestions.map((s, si) => (
-                      <View key={si} style={styles.suggestionRow}>
-                        <Ionicons name="arrow-forward" size={12} color={colors.accent.amber} />
-                        <Text style={styles.suggestionText}>{s}</Text>
-                      </View>
-                    ))}
+                {unanswered > 0 && (
+                  <View style={styles.breakdownItem}>
+                    <Text style={[styles.breakdownNum, { color: colors.textMuted }]}>{unanswered}</Text>
+                    <Text style={styles.breakdownLabel}>Unanswered</Text>
                   </View>
                 )}
+              </View>
+            </GlassCard>
+          </Animated.View>
 
-                {r.strengths.length > 0 && (
-                  <View style={styles.reviewSection}>
-                    <Text style={styles.strengthsLabel}>Strengths:</Text>
-                    {r.strengths.map((s, si) => (
-                      <View key={si} style={styles.suggestionRow}>
-                        <Ionicons name="checkmark" size={12} color={colors.success} />
-                        <Text style={styles.strengthText}>{s}</Text>
-                      </View>
-                    ))}
+          <View style={styles.section}>
+            <SectionHeader title="Question Review" icon="list-outline" />
+            {results.map((r, i) => (
+              <Animated.View key={i} entering={FadeInDown.delay(i * 100).springify().damping(14)}>
+                <GlassCard style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    <View style={styles.reviewQMeta}>
+                      <Text style={styles.reviewQNum}>Q{i + 1}</Text>
+                      <StatusBadge status={r.status} />
+                    </View>
+                    <Text style={[styles.reviewScore, { color: r.score >= 7 ? colors.success : r.score >= 4 ? colors.warning : colors.error }]}>{r.score}/10</Text>
                   </View>
-                )}
-              </GlassCard>
-            </Animated.View>
-          ))}
-        </View>
+                  <Text style={styles.reviewQuestion}>{r.question}</Text>
 
-        <View style={styles.resultsActions}>
-          <GradientButton title="Practice Again" icon="refresh" onPress={resetAll} gradient={['#059669', '#10B981']} />
-          <TouchableOpacity onPress={() => console.log('PDF report export - session:', { overallScore, results, category: selectedCategory?.name, difficulty, date: new Date().toISOString() })} style={styles.pdfBtn}>
-            <Ionicons name="document-outline" size={18} color={colors.textSecondary} />
-            <Text style={styles.pdfBtnText}>Export PDF Report</Text>
-          </TouchableOpacity>
+                  <View style={styles.reviewSection}>
+                    <Text style={styles.reviewSectionLabel}>Your Answer:</Text>
+                    <Text style={styles.reviewSectionText}>{r.answer || 'No answer provided'}</Text>
+                  </View>
+
+                  <View style={[styles.reviewSection, styles.idealSection]}>
+                    <Text style={styles.idealLabel}>Ideal Answer:</Text>
+                    <Text style={styles.idealText}>{r.idealAnswer}</Text>
+                  </View>
+
+                  <View style={[styles.reviewSection, styles.feedbackSection]}>
+                    <Text style={styles.feedbackLabel}>AI Feedback:</Text>
+                    <Text style={styles.feedbackText}>{r.feedback}</Text>
+                  </View>
+
+                  {r.suggestions.length > 0 && (
+                    <View style={styles.reviewSection}>
+                      <Text style={styles.suggestionsLabel}>Suggestions:</Text>
+                      {r.suggestions.map((s, si) => (
+                        <View key={si} style={styles.suggestionRow}>
+                          <Ionicons name="arrow-forward" size={12} color={colors.accent.amber} />
+                          <Text style={styles.suggestionText}>{s}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {r.strengths.length > 0 && (
+                    <View style={styles.reviewSection}>
+                      <Text style={styles.strengthsLabel}>Strengths:</Text>
+                      {r.strengths.map((s, si) => (
+                        <View key={si} style={styles.suggestionRow}>
+                          <Ionicons name="checkmark" size={12} color={colors.success} />
+                          <Text style={styles.strengthText}>{s}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </GlassCard>
+              </Animated.View>
+            ))}
+          </View>
+
+          <View style={styles.resultsActions}>
+            <GradientButton title="Practice Again" icon="refresh" onPress={resetAll} gradient={HERO_GRADIENT} />
+            <TouchableOpacity onPress={() => console.log('PDF report export - session:', { overallScore, results, category: selectedCategory?.name, difficulty, date: new Date().toISOString() })} style={styles.pdfBtn}>
+              <Ionicons name="document-outline" size={18} color={colors.textSecondary} />
+              <Text style={styles.pdfBtnText}>Export PDF Report</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     );
@@ -603,7 +623,7 @@ export default function MockInterviewScreen() {
 
     if (sessions.length === 0) {
       return (
-        <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <View style={styles.loadingContainer}>
           <EmptyToolState icon="time-outline" title="No History" message="Complete an interview to see your past sessions here." actionLabel="Start Interview" onAction={resetAll} />
         </View>
       );
@@ -611,88 +631,98 @@ export default function MockInterviewScreen() {
 
     return (
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <ToolHeader title="Interview History" subtitle="Your past practice sessions" gradient={['#059669', '#10B981']} icon="time" />
+        <ScreenHeader title="Interview History" subtitle="Your past practice sessions" icon="time" iconColors={HERO_GRADIENT} />
 
-        <View style={styles.section}>
-          {!historySession && (
-            <TouchableOpacity onPress={resetAll} style={styles.backLink}>
-              <Ionicons name="arrow-back" size={18} color={colors.accent.emerald} />
-              <Text style={styles.backLinkText}>Back to Interview</Text>
-            </TouchableOpacity>
-          )}
+        <View style={styles.content}>
+          <View style={styles.section}>
+            {!historySession && (
+              <TouchableOpacity onPress={resetAll} style={styles.backLink}>
+                <Ionicons name="arrow-back" size={18} color={colors.accent.emerald} />
+                <Text style={styles.backLinkText}>Back to Interview</Text>
+              </TouchableOpacity>
+            )}
 
-          {sessions.map((s, i) => {
-            const statusCount = {
-              correct: s.questions.filter(q => q.status === 'correct').length,
-              partial: s.questions.filter(q => q.status === 'partial').length,
-              incorrect: s.questions.filter(q => q.status === 'incorrect').length,
-            };
-            return (
-              <Animated.View key={s.id} entering={FadeInDown.delay(i * 80).springify().damping(14)}>
-                <TouchableOpacity onPress={() => historySession ? null : viewSession(s)} activeOpacity={historySession ? 1 : 0.7}>
-                  <GlassCard style={styles.historyCard}>
-                    <View style={styles.historyTop}>
-                      <View style={styles.historyMeta}>
-                        <LinearGradient colors={['#059669', '#10B981']} style={styles.historyIcon}>
-                          <Ionicons name="mic" size={18} color="#FFF" />
-                        </LinearGradient>
-                        <View>
-                          <Text style={styles.historyCategory}>{s.category}</Text>
-                          <Text style={styles.historyDate}>{new Date(s.date).toLocaleDateString()} · {s.difficulty} · {s.totalQuestions} questions</Text>
+            {sessions.map((s, i) => {
+              const statusCount = {
+                correct: s.questions.filter(q => q.status === 'correct').length,
+                partial: s.questions.filter(q => q.status === 'partial').length,
+                incorrect: s.questions.filter(q => q.status === 'incorrect').length,
+              };
+              return (
+                <Animated.View key={s.id} entering={FadeInDown.delay(i * 80).springify().damping(14)}>
+                  <TouchableOpacity onPress={() => historySession ? null : viewSession(s)} activeOpacity={historySession ? 1 : 0.7}>
+                    <GlassCard style={styles.historyCard}>
+                      <View style={styles.historyTop}>
+                        <View style={styles.historyMeta}>
+                          <LinearGradient colors={HERO_GRADIENT} style={styles.historyIcon}>
+                            <Ionicons name="mic" size={18} color="#FFF" />
+                          </LinearGradient>
+                          <View>
+                            <Text style={styles.historyCategory}>{s.category}</Text>
+                            <Text style={styles.historyDate}>{new Date(s.date).toLocaleDateString()} · {s.difficulty} · {s.totalQuestions} questions</Text>
+                          </View>
                         </View>
+                        <Text style={[styles.historyScore, { color: s.overallScore >= 60 ? colors.accent.emerald : colors.error }]}>{s.overallScore}%</Text>
                       </View>
-                      <Text style={[styles.historyScore, { color: s.overallScore >= 60 ? colors.accent.emerald : colors.error }]}>{s.overallScore}%</Text>
-                    </View>
-                    {!historySession && (
-                      <View style={styles.historyStatusRow}>
-                        <View style={styles.historyStatusItem}><Text style={[styles.historyStatusNum, { color: colors.success }]}>{statusCount.correct}</Text><Text style={styles.historyStatusLabel}>Correct</Text></View>
-                        <View style={styles.historyStatusItem}><Text style={[styles.historyStatusNum, { color: colors.warning }]}>{statusCount.partial}</Text><Text style={styles.historyStatusLabel}>Partial</Text></View>
-                        <View style={styles.historyStatusItem}><Text style={[styles.historyStatusNum, { color: colors.error }]}>{statusCount.incorrect}</Text><Text style={styles.historyStatusLabel}>Incorrect</Text></View>
-                      </View>
-                    )}
-                    {!historySession && (
-                      <View style={styles.historyArrow}>
-                        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-                      </View>
-                    )}
-                    {historySession && (
-                      <View style={styles.historyDetailSection}>
-                        <Text style={styles.jdLabel}>Job Description:</Text>
-                        <Text style={styles.jdText} numberOfLines={3}>{s.jobDescription}</Text>
-                      </View>
-                    )}
-                  </GlassCard>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
-        </View>
-
-        {historySession && (
-          <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}>
-            <GradientButton title="Back to History" icon="arrow-back" onPress={() => setHistorySession(null)} gradient={['#4B5563', '#6B7280']} />
+                      {!historySession && (
+                        <View style={styles.historyStatusRow}>
+                          <View style={styles.historyStatusItem}><Text style={[styles.historyStatusNum, { color: colors.success }]}>{statusCount.correct}</Text><Text style={styles.historyStatusLabel}>Correct</Text></View>
+                          <View style={styles.historyStatusItem}><Text style={[styles.historyStatusNum, { color: colors.warning }]}>{statusCount.partial}</Text><Text style={styles.historyStatusLabel}>Partial</Text></View>
+                          <View style={styles.historyStatusItem}><Text style={[styles.historyStatusNum, { color: colors.error }]}>{statusCount.incorrect}</Text><Text style={styles.historyStatusLabel}>Incorrect</Text></View>
+                        </View>
+                      )}
+                      {!historySession && (
+                        <View style={styles.historyArrow}>
+                          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                        </View>
+                      )}
+                      {historySession && (
+                        <View style={styles.historyDetailSection}>
+                          <Text style={styles.jdLabel}>Job Description:</Text>
+                          <Text style={styles.jdText} numberOfLines={3}>{s.jobDescription}</Text>
+                        </View>
+                      )}
+                    </GlassCard>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
           </View>
-        )}
+
+          {historySession && (
+            <View style={styles.historyBackWrap}>
+              <GradientButton title="Back to History" icon="arrow-back" onPress={() => setHistorySession(null)} gradient={['#4B5563', '#6B7280']} />
+            </View>
+          )}
+        </View>
       </ScrollView>
     );
   };
 
-  if (view === 'welcome') return renderWelcome();
-  if (view === 'interview') return renderInterview();
-  if (view === 'evaluating') return renderEvaluating();
-  if (view === 'results') return renderResults();
-  if (view === 'history') return renderHistory();
-
-  return renderWelcome();
+  return (
+    <View style={styles.container}>
+      <GlobalHeader />
+      {view === 'welcome' && renderWelcome()}
+      {view === 'interview' && renderInterview()}
+      {view === 'evaluating' && renderEvaluating()}
+      {view === 'results' && renderResults()}
+      {view === 'history' && renderHistory()}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: 60 },
-  section: { paddingHorizontal: spacing.lg, marginTop: spacing.md },
+  content: { paddingHorizontal: spacing.lg },
+  section: { marginTop: spacing.lg },
   loadingContainer: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' },
 
+  heroSub: { color: 'rgba(255,255,255,0.92)', fontSize: 13, lineHeight: 19, marginBottom: spacing.md },
+
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  catCard: { padding: spacing.md, borderRadius: borderRadius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderLight, minHeight: 130 },
+  catWrap: { width: '48%' },
+  catCard: { padding: spacing.md, borderRadius: borderRadius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderLight, minHeight: 130, ...shadow.sm },
   catIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm },
   catName: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 2 },
   catDesc: { fontSize: 11, color: colors.textMuted, lineHeight: 15 },
@@ -710,10 +740,10 @@ const styles = StyleSheet.create({
   descCard: { padding: spacing.md },
   textArea: { backgroundColor: colors.surfaceLight, borderRadius: borderRadius.md, padding: spacing.md, color: colors.text, fontSize: 14, borderWidth: 1, borderColor: colors.border, minHeight: 120, textAlignVertical: 'top' },
 
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.lg, marginTop: spacing.md, padding: spacing.md, backgroundColor: colors.errorLight, borderRadius: borderRadius.md },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md, padding: spacing.md, backgroundColor: colors.errorLight, borderRadius: borderRadius.md },
   errorText: { color: colors.error, fontSize: 13, flex: 1 },
 
-  startBtnWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
+  startBtnWrap: { paddingTop: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
   historyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: spacing.md },
   historyBtnText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
 
@@ -778,7 +808,7 @@ const styles = StyleSheet.create({
   strengthsLabel: { fontSize: 12, fontWeight: '600', color: colors.success, marginBottom: spacing.xs },
   strengthText: { fontSize: 13, color: colors.textSecondary, flex: 1 },
 
-  resultsActions: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md, paddingBottom: spacing.xxl },
+  resultsActions: { paddingTop: spacing.md, gap: spacing.md, paddingBottom: spacing.xxl },
   pdfBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: spacing.md },
   pdfBtnText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
 
@@ -800,4 +830,5 @@ const styles = StyleSheet.create({
   historyDetailSection: { marginTop: spacing.sm },
   jdLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '600', marginBottom: 2 },
   jdText: { fontSize: 12, color: colors.textSecondary, lineHeight: 16 },
+  historyBackWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
 });

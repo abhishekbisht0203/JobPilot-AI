@@ -16,14 +16,14 @@ import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import { CareerTool } from '../../../types';
 
 const TOOLS: CareerTool[] = [
-  { id: 'resume-builder', name: 'AI Resume Builder', description: 'Craft ATS-optimized resumes with AI guidance', icon: 'document-text', color: '#3B82F6', route: '/career-tools/resume-builder', status: 'available' },
-  { id: 'cover-letter', name: 'Cover Letter Generator', description: 'Generate tailored cover letters instantly', icon: 'mail', color: '#8B5CF6', route: '/career-tools/cover-letter', status: 'available' },
-  { id: 'mock-interview', name: 'Mock Interview', description: 'Practice with AI-powered interview simulations', icon: 'mic', color: '#14B8A6', route: '/career-tools/mock-interview', status: 'available' },
-  { id: 'resume-checker', name: 'Resume Checker', description: 'Check ATS compatibility and get suggestions', icon: 'checkmark-circle', color: '#10B981', route: '/career-tools/resume-checker', status: 'available' },
-  { id: 'salary-explorer', name: 'Salary Explorer', description: 'Explore salary trends by role and location', icon: 'cash', color: '#F59E0B', route: '/career-tools/salary-explorer', status: 'available' },
-  { id: 'career-roadmap', name: 'Career Roadmap', description: 'Plan your career growth with AI insights', icon: 'trending-up', color: '#6366F1', route: '/career-tools/career-roadmap', status: 'available' },
-  { id: 'interview-prep', name: 'Interview Preparation', description: 'Get tips, questions, and practice guidance', icon: 'school', color: '#EC4899', route: '/career-tools/interview-prep', status: 'available' },
-  { id: 'ats-score', name: 'ATS Score', description: 'Analyze your resume against ATS algorithms', icon: 'speedometer', color: '#06B6D4', route: '/career-tools/ats-score', status: 'premium' },
+  { id: 'resume-builder', name: 'AI Resume Builder', description: 'Craft ATS-optimized resumes with AI guidance', icon: 'sparkles', color: '#3B82F6', route: '/career-tools/resume-builder', status: 'available' },
+  { id: 'cover-letter', name: 'Cover Letter Generator', description: 'Generate tailored cover letters instantly', icon: 'document-text', color: '#8B5CF6', route: '/career-tools/cover-letter', status: 'available' },
+  { id: 'mock-interview', name: 'Mock Interview', description: 'Practice with AI-powered interview simulations', icon: 'mic', color: '#10B981', route: '/career-tools/mock-interview', status: 'available' },
+  { id: 'resume-checker', name: 'Resume Checker', description: 'Check ATS compatibility and get suggestions', icon: 'shield-checkmark', color: '#06B6D4', route: '/career-tools/resume-checker', status: 'available' },
+  { id: 'salary-explorer', name: 'Salary Explorer', description: 'Explore salary trends by role and location', icon: 'logo-usd', color: '#F97316', route: '/career-tools/salary-explorer', status: 'available' },
+  { id: 'career-roadmap', name: 'Career Roadmap', description: 'Plan your career growth with AI insights', icon: 'location', color: '#EC4899', route: '/career-tools/career-roadmap', status: 'available' },
+  { id: 'interview-prep', name: 'Interview Preparation', description: 'Get tips, questions, and practice guidance', icon: 'book', color: '#3B82F6', route: '/career-tools/interview-prep', status: 'available' },
+  { id: 'ats-score', name: 'ATS Score', description: 'Analyze your resume against ATS algorithms', icon: 'shield', color: '#F97316', route: '/career-tools/ats-score', status: 'premium' },
 ];
 
 const TOOL_COLORS: Record<string, readonly [string, string]> = {
@@ -32,6 +32,7 @@ const TOOL_COLORS: Record<string, readonly [string, string]> = {
   '14B8A6': colors.gradient.teal,
   '10B981': colors.gradient.success,
   'F59E0B': colors.gradient.warning,
+  'F97316': colors.gradient.warning,
   '6366F1': colors.gradient.indigo,
   'EC4899': colors.gradient.coral,
   '06B6D4': colors.gradient.aurora,
