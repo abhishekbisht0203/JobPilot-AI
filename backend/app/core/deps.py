@@ -1,14 +1,25 @@
+from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from bson import ObjectId
 from .database import get_db
 from .security import decode_token
 
-security = HTTPBearer()
+# auto_error=False so a missing/malformed header falls through to us instead
+# of HTTPBearer raising its own 403 "Not authenticated" — we want 401 there,
+# reserving 403 for "authenticated but not permitted".
+security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ):
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
     payload = decode_token(token)
     if payload is None:

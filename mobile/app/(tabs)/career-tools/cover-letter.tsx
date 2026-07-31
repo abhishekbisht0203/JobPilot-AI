@@ -10,6 +10,9 @@ import { useResponsive } from '../../../lib/responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTabListBottomPadding } from '../../../components/ui/TabBarHeight';
 import { GradientCard, PrimaryButton, LoadingState } from '../../../components/career-tools/shared';
+import { ScreenHeader } from '../../../components/career-tools';
+
+const HERO_GRADIENT = colors.tool.coverLetter;
 
 export default function CoverLetterScreen() {
   const { horizontalPadding } = useResponsive();
@@ -62,17 +65,18 @@ export default function CoverLetterScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
       <View style={styles.container}>
+        <ScreenHeader title="Cover Letter" subtitle="Generate personalized cover letters" icon="document-text" iconColors={HERO_GRADIENT} />
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingHorizontal: horizontalPadding }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View entering={FadeInUp.delay(100).springify().damping(14)} style={{ marginTop: spacing.md }}>
+          <Animated.View entering={FadeInUp.delay(100).springify().damping(14)}>
             <GradientCard
-              colors={['#8B5CF6', '#6D28D9']}
+              colors={HERO_GRADIENT}
               icon="mail"
               title="Cover Letter Generator"
-              subtitle="Create tailored cover letters that get noticed"
+              subtitle="Create a cover letter that gets you noticed"
             />
           </Animated.View>
 
@@ -86,7 +90,7 @@ export default function CoverLetterScreen() {
                 title={loading ? 'Generating...' : 'Generate Cover Letter'}
                 icon={loading ? 'hourglass-outline' : 'sparkles'}
                 onPress={handleGenerate}
-                gradient={['#8B5CF6', '#6D28D9']}
+                gradient={HERO_GRADIENT}
                 disabled={loading || !jobRole.trim() || !company.trim()}
                 style={{ marginTop: spacing.md }}
               />
@@ -99,7 +103,7 @@ export default function CoverLetterScreen() {
 
               {generated && !loading && (
                 <Animated.View entering={FadeInUp.springify().damping(14)} style={styles.successCard}>
-                  <LinearGradient colors={['#8B5CF6', '#6D28D9']} style={styles.successInner}>
+                  <LinearGradient colors={HERO_GRADIENT} style={styles.successInner}>
                     <Ionicons name="checkmark-circle" size={40} color="#FFF" />
                     <Text style={styles.successTitle}>Cover Letter Generated!</Text>
                     <Text style={styles.successSub}>Your AI-powered cover letter is ready for review</Text>
@@ -119,7 +123,7 @@ export default function CoverLetterScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingBottom: getTabListBottomPadding() + spacing.xl },
+  scroll: { paddingBottom: getTabListBottomPadding() + spacing.xl, paddingTop: spacing.md },
   formCard: { marginTop: spacing.lg, marginBottom: spacing.xl },
   formInner: { borderRadius: borderRadius.xl, padding: spacing.lg, overflow: 'hidden' },
   fieldWrap: { marginBottom: spacing.md },

@@ -2,8 +2,11 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { Platform } from 'react-native';
 import { API_URL, API_TIMEOUT, API_RETRY_COUNT, API_RETRY_DELAY } from './config';
 
+// Flip to true locally to see [API][...] request/response logs during debugging.
+const API_DEBUG_LOGGING = false;
+
 const log = (label: string, data: any) => {
-  if (__DEV__) {
+  if (__DEV__ && API_DEBUG_LOGGING) {
     console.log(`[API][${label}]`, typeof data === 'object' ? JSON.stringify(data, null, 2) : data);
   }
 };
@@ -19,14 +22,13 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Single source of truth: the Zustand auth store (persisted under the
+    // 'auth-storage' key). Do not read a separately hand-maintained
+    // localStorage key here — it drifts out of sync with the real store.
     let token: string | null = null;
     try {
-      if (Platform.OS === 'web') {
-        token = localStorage.getItem('token');
-      } else {
-        const { useAuthStore } = require('../store');
-        token = useAuthStore.getState().token;
-      }
+      const { useAuthStore } = require('../store');
+      token = useAuthStore.getState().token;
     } catch {}
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -57,11 +59,8 @@ api.interceptors.response.use(
       if (error.response.status === 401 && !isLoggingOut) {
         isLoggingOut = true;
         try {
-          if (Platform.OS === 'web') localStorage.removeItem('token');
-          else {
-            const { useAuthStore } = require('../store');
-            useAuthStore.getState().clearAuth();
-          }
+          const { useAuthStore } = require('../store');
+          useAuthStore.getState().clearAuth();
         } catch {}
         setTimeout(() => { isLoggingOut = false; }, 2000);
       }

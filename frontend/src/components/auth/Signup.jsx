@@ -83,16 +83,21 @@ export default function Signup() {
     }
     try {
       dispatch(setLoading(true))
-      const res = await axios.post(`${USER_API_END_POINT}/register`, input, {
+      const res = await axios.post(`${USER_API_END_POINT}/register`, {
+        name: input.fullname,
+        email: input.email,
+        password: input.password,
+        phoneNumber: input.phoneNumber,
+      }, {
         headers: { "Content-Type": "application/json" },
         withCredentials: true,
       })
       if (res.data.success) {
-        toast.success(res.data.message)
+        toast.success("Account created successfully")
         setTimeout(() => navigate("/login"), 1200)
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Registration failed")
+      toast.error(err.response?.data?.detail || err.response?.data?.message || "Registration failed")
       setShakeKey((k) => k + 1)
     } finally {
       dispatch(setLoading(false))

@@ -35,6 +35,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
   setLoading: (loading: boolean) => void;
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
@@ -43,6 +44,7 @@ interface AuthState {
   updateUser: (partial: Partial<User>) => void;
   setCurrentRole: (role: 'jobSeeker' | 'recruiter') => void;
   logout: () => void;
+  setHasHydrated: (hydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -52,31 +54,27 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      hasHydrated: false,
       setLoading: (loading) => set({ loading }),
       setUser: (user) => set({ user, isAuthenticated: user !== null }),
-      setToken: (token) => {
-        if (Platform.OS === 'web' && token) localStorage.setItem('token', token);
-        set({ token });
-      },
-      setCredentials: ({ user, token }) => {
-        if (Platform.OS === 'web' && token) localStorage.setItem('token', token);
-        set({ user, token, isAuthenticated: true, loading: false });
-      },
-      clearAuth: () => {
-        if (Platform.OS === 'web') localStorage.removeItem('token');
-        set({ user: null, token: null, isAuthenticated: false, loading: false });
-      },
+      // Persistence to storage is handled entirely by the `persist` middleware
+      // below via `partialize`. Do not hand-write a parallel 'token' key here
+      // — that duplicate previously drifted out of sync with the real store.
+      setToken: (token) => set({ token }),
+      setCredentials: ({ user, token }) => set({ user, token, isAuthenticated: true, loading: false }),
+      clearAuth: () => set({ user: null, token: null, isAuthenticated: false, loading: false }),
       updateUser: (partial) => set({ user: get().user ? { ...get().user!, ...partial } : null }),
       setCurrentRole: (currentRole) => set({ user: get().user ? { ...get().user!, currentRole } as any : null }),
-      logout: () => {
-        if (Platform.OS === 'web') localStorage.removeItem('token');
-        set({ user: null, token: null, isAuthenticated: false, loading: false });
-      },
+      logout: () => set({ user: null, token: null, isAuthenticated: false, loading: false }),
+      setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => storage),
       partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
