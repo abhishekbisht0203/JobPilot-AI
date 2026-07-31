@@ -152,7 +152,9 @@ export const applicationApi = {
 // ─── RESUMES (/api/v1/resumes/*) ───────────────────────────────────────
 export const resumeApi = {
   upload: (formData: FormData) =>
-    api.post('/resumes/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    // Let axios/RN generate the multipart boundary itself — a hardcoded
+    // 'multipart/form-data' header with no boundary breaks server-side parsing.
+    api.post('/resumes/upload', formData),
   list: () => api.get('/resumes'),
   get: (id: string) => api.get(`/resumes/${id}`),
   delete: (id: string) => api.delete(`/resumes/${id}`),
